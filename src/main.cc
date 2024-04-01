@@ -212,12 +212,10 @@ void loop() {
 
 #ifdef UHID_LED_TEST
   static int z = 0;
-  if (++z % 10 == 0) {
-    Message message = z / 10 % 2 == 0
-      ? Message::UHID_LED_ALL_OFF
-      : Message::UHID_LED_ALL_ON;
-    rp2040.fifo.push_nb((uint32_t)message);
-  }
+  Message message = ++z % 2 == 0
+    ? Message::UHID_LED_ALL_OFF
+    : Message::UHID_LED_ALL_ON;
+  rp2040.fifo.push_nb((uint32_t)message);
 #endif
 
   if (pinout.debugUart) {
