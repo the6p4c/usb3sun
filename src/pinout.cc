@@ -2,30 +2,51 @@
 #include "pinout.h"
 #include "settings.h"
 
+#include <cstdarg>
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_TinyUSB.h>
 
 // TODO add Print::vprintf in ArduinoCore-API Print.h
-#if defined(DEBUG_LOGGING)
+static int vprintfDebug(const char *format, va_list ap) {
+  if (!pinout.debugCdc && !pinout.debugUart) {
+    return true;
+  }
+  va_list ap1;
+  va_copy(ap1, ap);
+  char result[256];
+  int requiredLen = vsnprintf(result, sizeof result, format, ap1);
+  va_end(ap1);
+  if (requiredLen < 0) {
+    return false;
+  } else if (requiredLen > sizeof result - 1) {
+    size_t len = requiredLen + 1;
+    char *result = new char[len];
+    if (!result) {
+      return false;
+    }
+    va_list ap2;
+    va_copy(ap2, ap);
+    int actualLen = vsnprintf(result, len, format, ap2);
+    va_end(ap2);
+    bool ok = false;
+    if (actualLen == requiredLen) {
+      ok = pinout.debugWrite(result, actualLen);
+    }
+    delete[] result;
+    return ok;
+  }
+  return pinout.debugWrite(result, requiredLen);
+}
+
 static int printfDebug(const char *format, ...) {
-  char buf[256];
-  int len;
   va_list ap;
   va_start(ap, format);
-  len = vsnprintf(buf, sizeof(buf), format, ap);
-#if defined(DEBUG_OVER_CDC)
-  Serial.write(buf);
-  Serial.flush();
-#endif
-#if defined(DEBUG_OVER_UART)
-  DEBUG_UART.write(buf);
-  DEBUG_UART.flush();
-#endif
+  int result = vprintfDebug(format, ap);
   va_end(ap);
-  return len;
+  return result;
 }
-#endif
 
 Pinout::Pinout() : sunmV2(SUN_MTX_V2, SerialPIO::NOPIN) {}
 
@@ -164,33 +185,11 @@ bool Pinout::debugPrintln(const char *text) {
 }
 
 bool Pinout::debugPrintf(const char *format, ...) {
-  if (!debugCdc && !debugUart) {
-    return true;
-  }
   va_list ap;
-  char result[256];
   va_start(ap, format);
-  int requiredLen = vsnprintf(result, sizeof result, format, ap);
+  int result = vprintfDebug(format, ap);
   va_end(ap);
-  if (requiredLen < 0) {
-    return false;
-  } else if (requiredLen > sizeof result - 1) {
-    size_t len = requiredLen + 1;
-    char *result = new char[len];
-    if (!result) {
-      return false;
-    }
-    va_start(ap, format);
-    int actualLen = vsnprintf(result, len, format, ap);
-    va_end(ap);
-    bool ok = false;
-    if (actualLen == requiredLen) {
-      ok = debugWrite(result, actualLen);
-    }
-    delete[] result;
-    return ok;
-  }
-  return debugWrite(result, requiredLen);
+  return result;
 }
 
 void Pinout::allowDebugOverCdc() {
