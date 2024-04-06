@@ -21,16 +21,17 @@ void sunkSend(bool make, uint8_t code) {
 #ifdef SUNK_VERBOSE
   Sprintf("sunk: tx %02Xh\n", code);
 #endif
-  pinout.sunk->write(code);
+  usb3sun_sunk_write(&code, sizeof code);
 #endif
 
   if (activeCount <= 0) {
     activeCount = 0;
 #ifdef SUNK_ENABLE
 #ifdef SUNK_VERBOSE
-  Sprintf("sunk: idle\n");
+    Sprintf("sunk: idle\n");
 #endif
-  pinout.sunk->write(SUNK_IDLE);
+    uint8_t code = SUNK_IDLE;
+    usb3sun_sunk_write(&code, sizeof code);
 #endif
   }
 

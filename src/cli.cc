@@ -1,4 +1,7 @@
 #include "cli.h"
+
+#include <cstring>
+
 #include "pinout.h"
 #include "sunk.h"
 #include "sunm.h"
@@ -9,7 +12,7 @@ void handleCliInput(char cur) {
   static size_t len = 0;
   static char prev = '\0';
   static bool prevIsEsc = false;
-  auto t = micros();
+  auto t = usb3sun_micros();
   static auto tPrev = t;
   static auto tMouse = t;
   auto delta = t - tPrev;

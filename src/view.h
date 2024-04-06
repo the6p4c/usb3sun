@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <Adafruit_TinyUSB.h>
+#include "usb.h"
 
 struct DvChange {
   uint8_t usbkModifier;
@@ -17,7 +17,7 @@ struct SelChange {
 };
 
 struct UsbkChanges {
-  hid_keyboard_report_t *kreport = nullptr;
+  UsbkReport kreport{};
   DvChange dv[8 * 2]{};
   SelChange sel[6 * 2]{};
   size_t dvLen = 0;

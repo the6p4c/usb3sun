@@ -2,18 +2,10 @@
 
 #include <atomic>
 
+#ifdef USB3SUN_HAL_ARDUINO_PICO
 #include <Arduino.h>
-#include <Wire.h>
-#include <CoreMutex.h>
-#include <SerialPIO.h>
-
-extern "C" {
-#include <pio_usb.h>
-}
-
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <Adafruit_TinyUSB.h>
+#endif
 
 #include "bindings.h"
 #include "buzzer.h"
@@ -25,6 +17,7 @@ extern "C" {
 #include "state.h"
 #include "sunm.h"
 #include "sunk.h"
+#include "usb.h"
 #include "view.h"
 #include "splash.xbm"
 #include "logo.xbm"
@@ -45,7 +38,6 @@ enum class Message : uint32_t {
 };
 
 // core 1 only
-Adafruit_USBH_Host USBHost;
 struct {
   bool present = false;
   uint8_t dev_addr;
@@ -103,7 +95,7 @@ struct DefaultView : View {
 #endif
 
     // treat simultaneous DV and Sel changes as DV before Sel, for special bindings
-    const uint8_t lastModifiers = changes.kreport->modifier;
+    const uint8_t lastModifiers = changes.kreport.modifier;
 
     for (int i = 0; i < changes.selLen; i++) {
       const uint8_t usbkSelector = changes.sel[i].usbkSelector;
@@ -155,7 +147,7 @@ void setup() {
   // pico led on, then configure pin modes
   pinout.begin();
   Sprintln("usb3sun " USB3SUN_VERSION);
-  Sprintf("pinout: v%d\n", pinout.version);
+  Sprintf("pinout: v%d\n", usb3sun_pinout_version());
 
   usb3sun_display_init();
   Settings::begin();
@@ -172,7 +164,7 @@ void setup() {
 #endif
   wait = false;
 
-  usb3sun_gpio_write(LED_BUILTIN, false);
+  usb3sun_gpio_write(LED_PIN, false);
 }
 
 void drawStatus(int16_t x, int16_t y, const char *label, bool on) {
@@ -196,7 +188,7 @@ void loop() {
   Message message = ++z % 2 == 0
     ? Message::UHID_LED_ALL_OFF
     : Message::UHID_LED_ALL_ON;
-  rp2040.fifo.push_nb((uint32_t)message);
+  usb3sun_fifo_push((uint32_t)message);
 #endif
 
   int input;
@@ -209,18 +201,18 @@ void loop() {
 
 #ifdef SUNK_ENABLE
 void sunkEvent() {
-  while (pinout.sunk->available() > 0) {
-    uint8_t command = pinout.sunk->read();
+  int result;
+  while ((result = usb3sun_sunk_read()) != -1) {
+    uint8_t command = result;
     Sprintf("sunk: rx %02Xh\n", command);
     switch (command) {
-      case SUNK_RESET:
+      case SUNK_RESET: {
         // self test fail:
-        // pinout.sunk->write(0x7E);
-        // pinout.sunk->write(0x01);
-        pinout.sunk->write(SUNK_RESET_RESPONSE);
-        pinout.sunk->write(0x04);
-        pinout.sunk->write(0x7F); // TODO optional make code
-        break;
+        // usb3sun_sunk_write(0x7E);
+        // usb3sun_sunk_write(0x01);
+        uint8_t response[]{SUNK_RESET_RESPONSE, 0x04, 0x7F}; // TODO optional make code
+        usb3sun_sunk_write(response, sizeof response);
+      } break;
       case SUNK_BELL_ON:
         state.bell = true;
         buzzer.update();
@@ -236,8 +228,8 @@ void sunkEvent() {
         state.clickEnabled = false;
         break;
       case SUNK_LED: {
-        while (pinout.sunk->peek() == -1) usb3sun_sleep_micros(1'000);
-        uint8_t status = pinout.sunk->read();
+        while ((result = usb3sun_sunk_read()) == -1) usb3sun_sleep_micros(1'000);
+        uint8_t status = result;
         Sprintf("sunk: led status %02Xh\n", status);
         state.num = status & 1 << 0;
         state.compose = status & 1 << 1;
@@ -245,14 +237,13 @@ void sunkEvent() {
         state.caps = status & 1 << 3;
 
         // ensure state update finished, then notify
-        __dmb();
-        rp2040.fifo.push_nb((uint32_t)Message::UHID_LED_FROM_STATE);
+        usb3sun_dmb();
+        usb3sun_fifo_push((uint32_t)Message::UHID_LED_FROM_STATE);
       } break;
       case SUNK_LAYOUT: {
-        pinout.sunk->write(SUNK_LAYOUT_RESPONSE);
         // UNITED STATES (TODO alternate layouts)
-        uint8_t layout = 0b00000000;
-        pinout.sunk->write(&layout, 1);
+        uint8_t response[]{SUNK_LAYOUT_RESPONSE, 0b00000000};
+        usb3sun_sunk_write(response, sizeof response);
       } break;
     }
   }
@@ -275,32 +266,18 @@ void setup1() {
   while (wait);
 
   // Check for CPU frequency, must be multiple of 120Mhz for bit-banging USB
-  uint32_t cpu_hz = clock_get_hz(clk_sys);
+  uint32_t cpu_hz = usb3sun_clock_speed();
   if (cpu_hz != 120000000uL && cpu_hz != 240000000uL) {
     Sprintf("error: cpu frequency %u, set [env:pico] board_build.f_cpu = 120000000L\n", cpu_hz);
     while (true) usb3sun_sleep_micros(1'000);
   }
 
-  pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
-  pio_cfg.pin_dp = USB0_DP;
-  pio_cfg.sm_tx = 1;
-
-  // tuh_configure -> pico pio hcd_configure -> memcpy to static global
-  USBHost.configure_pio_usb(1, &pio_cfg);
-
-  // run host stack on controller (rhport) 1
-  // Note: For rp2040 pico-pio-usb, calling USBHost.begin() on core1 will have most of the
-  // host bit-banging processing works done in core1 to free up core0 for other works
-  // tuh_init -> pico pio hcd_init -> pio_usb_host_init -> pio_usb_bus_init -> set root[0]->initialized
-  USBHost.begin(1);
-
-  // set root[i]->initialized for the first unused i less than PIO_USB_ROOT_PORT_CNT
-  pio_usb_host_add_port(USB1_DP, PIO_USB_PINOUT_DPDM);
+  usb3sun_usb_init();
 }
 
 void loop1() {
   uint32_t message;
-  if (rp2040.fifo.pop_nb(&message)) {
+  if (usb3sun_fifo_pop(&message)) {
     for (size_t i = 0; i < sizeof(hid) / sizeof(*hid); i++) {
       if (!hid[i].present || !hid[i].led.present)
         continue;
@@ -333,7 +310,7 @@ void loop1() {
 #endif
     }
   }
-  USBHost.task();
+  usb3sun_usb_task();
   buzzer.update();
 }
 
@@ -344,22 +321,22 @@ void loop1() {
 // it will be skipped therefore report_desc = NULL, desc_len = 0
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_report, uint16_t desc_len) {
   uint16_t vid, pid;
-  tuh_vid_pid_get(dev_addr, &vid, &pid);
+  usb3sun_usb_vid_pid(dev_addr, &vid, &pid);
   Sprintf("usb [%u:%u]: hid mount vid:pid=%04x:%04x\n", dev_addr, instance, vid, pid);
 
-  tuh_hid_report_info_t reports[16];
-  size_t reports_len = tuh_hid_parse_report_descriptor(reports, sizeof(reports) / sizeof(*reports), desc_report, desc_len);
+  usb3sun_hid_report_info reports[16];
+  size_t reports_len = usb3sun_uhid_parse_report_descriptor(reports, sizeof(reports) / sizeof(*reports), desc_report, desc_len);
   for (size_t i = 0; i < reports_len; i++)
     Sprintf("    reports[%zu] report_id=%u usage=%02Xh usage_page=%04Xh\n", i, reports[i].report_id, reports[i].usage, reports[i].usage_page);
 
   // hid_subclass_enum_t if_subclass = ...;
-  uint8_t if_protocol = tuh_hid_interface_protocol(dev_addr, instance);
+  uint8_t if_protocol = usb3sun_uhid_interface_protocol(dev_addr, instance);
   Sprintf("    bInterfaceProtocol=%u", if_protocol);
   switch (if_protocol) {
-    case HID_ITF_PROTOCOL_KEYBOARD:
+    case USB3SUN_UHID_KEYBOARD:
       Sprintln(" (boot keyboard)");
       break;
-    case HID_ITF_PROTOCOL_MOUSE:
+    case USB3SUN_UHID_MOUSE:
       Sprintln(" (boot mouse)");
       break;
     default:
@@ -368,8 +345,8 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_re
 
   // TODO non-boot input devices
   switch (if_protocol) {
-    case HID_ITF_PROTOCOL_KEYBOARD:
-    case HID_ITF_PROTOCOL_MOUSE: {
+    case USB3SUN_UHID_KEYBOARD:
+    case USB3SUN_UHID_MOUSE: {
       bool ok = false;
       for (size_t i = 0; i < sizeof(hid) / sizeof(*hid); i++) {
         if (!hid[i].present) {
@@ -381,7 +358,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_re
           hid[i].instance = instance;
           hid[i].if_protocol = if_protocol;
           hid[i].led.present = false;
-          if (if_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
+          if (if_protocol == USB3SUN_UHID_KEYBOARD) {
             for (size_t j = 0; j < reports_len; j++) {
               if (reports[j].usage_page == 1 && reports[j].usage == 6) {
                 hid[i].led.present = true;
@@ -400,7 +377,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_re
     }
   }
 
-  if (!tuh_hid_receive_report(dev_addr, instance))
+  if (!usb3sun_uhid_request_report(dev_addr, instance))
     Sprintf("error: usb [%u:%u]: failed to request to receive report\n", dev_addr, instance);
 
   buzzer.plug();
@@ -433,7 +410,7 @@ void tuh_hid_set_protocol_complete_cb(uint8_t dev_addr, uint8_t instance, uint8_
 
 // Invoked when received report from device via interrupt endpoint
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *report, uint16_t len) {
-  uint8_t if_protocol = tuh_hid_interface_protocol(dev_addr, instance);
+  uint8_t if_protocol = usb3sun_uhid_interface_protocol(dev_addr, instance);
 #ifndef UHID_VERBOSE
   Sprint(".");
 #endif
@@ -446,8 +423,8 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 #endif
 
   switch (if_protocol) {
-    case HID_ITF_PROTOCOL_KEYBOARD: {
-      hid_keyboard_report_t *kreport = (hid_keyboard_report_t *) report;
+    case USB3SUN_UHID_KEYBOARD: {
+      const UsbkReport *kreport = reinterpret_cast<const UsbkReport *>(report);
 
       unsigned long t = usb3sun_micros();
 
@@ -461,7 +438,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
       }
 
       UsbkChanges changes{};
-      changes.kreport = kreport;
+      changes.kreport = *kreport;
 
       for (int i = 0; i < 8; i++) {
         if ((state.lastModifiers & 1 << i) != (kreport->modifier & 1 << i)) {
@@ -505,12 +482,12 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
       View::key(changes);
 
       // commit the DV and Sel changes
-      state.lastModifiers = changes.kreport->modifier;
+      state.lastModifiers = changes.kreport.modifier;
       for (int i = 0; i < 6; i++)
-        state.lastKeys[i] = changes.kreport->keycode[i];
+        state.lastKeys[i] = changes.kreport.keycode[i];
     } break;
-    case HID_ITF_PROTOCOL_MOUSE: {
-      hid_mouse_report_t *mreport = (hid_mouse_report_t *) report;
+    case USB3SUN_UHID_MOUSE: {
+      const UsbmReport *mreport = reinterpret_cast<const UsbmReport *>(report);
 #ifdef UHID_VERBOSE
       Sprintf(" buttons=%u x=%d y=%d", mreport->buttons, mreport->x, mreport->y);
 #endif
@@ -533,6 +510,14 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
   }
 out:
   // continue to request to receive report
-  if (!tuh_hid_receive_report(dev_addr, instance))
+  if (!usb3sun_uhid_request_report(dev_addr, instance))
     Sprintf("error: usb [%u:%u]: failed to request to receive report\n", dev_addr, instance);
 }
+
+#ifdef USB3SUN_HAL_TEST
+
+int main() {
+  setup();
+}
+
+#endif

@@ -23,6 +23,7 @@
 #define USB1_DM (USB_DP+1)  // GP# number for USB root port 1 D- (always D+ GP# + 1)
 #define BUZZER_PIN 28       // GP# number for positive of passive piezo buzzer
 #define PINOUT_V2_PIN 7     // GP# number for detecting pinout v2 (rev A4+)
+#define LED_PIN 25          // GP# number for pico’s built-in led
 
 // the following must be GP# numbers valid for...
 #define DEBUG_UART_TX 0     // ...UART0 TX: connect to picoprobe GP5
@@ -51,10 +52,6 @@
                             // pin 7: power key (yellow)
 #define POWER_KEY 15        // ...any
                             // pin 8: +5 Vdc (orange)
-#define DEBUG_UART          Serial1     // UART0
-#define SUNK_UART_V1        Serial1     // UART0
-#define SUNK_UART_V2        Serial2     // UART1
-#define SUNM_UART_V1        Serial2     // UART1
 
 #define SUNK_ENABLE
 #define SUNM_ENABLE

@@ -2,6 +2,8 @@
 #include "pinout.h"
 
 #include <cstdarg>
+#include <cstdio>
+#include <cstring>
 
 #include "hal.h"
 #include "settings.h"
@@ -43,36 +45,30 @@ static int printfDebug(const char *format, ...) {
   return result;
 }
 
-Pinout::Pinout() : sunmV2(SUN_MTX_V2, SerialPIO::NOPIN) {}
+Pinout::Pinout() {}
 
 void Pinout::v1() {
 #if defined(DEBUG_LOGGING)
 #if defined(DEBUG_OVER_CDC)
-  allowDebugOverCdc();
+  usb3sun_allow_debug_over_cdc();
 #endif
 #if defined(DEBUG_OVER_UART) && !defined(SUNK_ENABLE)
-  allowDebugOverUart();
+  usb3sun_allow_debug_over_uart();
 #endif
-  DEBUG_RP2040_PRINTF = printfDebug;
+  usb3sun_debug_init(printfDebug);
 #endif
 }
 
 void Pinout::v2() {
-  version = 2;
-  sunk = &SUNK_UART_V2;
-  sunm = &sunmV2;
-  sunkTx = SUN_KTX_V2;
-  sunkRx = SUN_KRX_V2;
-  sunmTx = SUN_MTX_V2;
-  sunkUart = &SUNK_UART_V2;
+  usb3sun_pinout_v2();
 #if defined(DEBUG_LOGGING)
 #if defined(DEBUG_OVER_CDC)
-  allowDebugOverCdc();
+  usb3sun_allow_debug_over_cdc();
 #endif
 #if defined(DEBUG_OVER_UART)
-  allowDebugOverUart();
+  usb3sun_allow_debug_over_uart();
 #endif
-  DEBUG_RP2040_PRINTF = printfDebug;
+  usb3sun_debug_init(printfDebug);
 #endif
 
   // set DISPLAY_ENABLE high to turn on the display via Q7.
@@ -87,8 +83,8 @@ void Pinout::v2() {
 
 void Pinout::begin() {
   // pico led on, to be turned off at the end of setup()
-  usb3sun_gpio_set_as_output(LED_BUILTIN);
-  usb3sun_gpio_write(LED_BUILTIN, true);
+  usb3sun_gpio_set_as_output(LED_PIN);
+  usb3sun_gpio_write(LED_PIN, true);
 
   usb3sun_gpio_set_as_output(BUZZER_PIN);
   usb3sun_gpio_set_as_output(POWER_KEY);
@@ -109,12 +105,7 @@ void Pinout::begin() {
 
 void Pinout::beginSun() {
 #if defined(SUNK_ENABLE)
-  sunk->end();
-  sunkUart->setPinout(sunkTx, sunkRx);
-  sunk->begin(1200, SERIAL_8N1);
-  // gpio invert must be set *after* setPinout/begin
-  usb3sun_gpio_set_as_inverted(sunkTx);
-  usb3sun_gpio_set_as_inverted(sunkRx);
+  usb3sun_sunk_init();
 
   // break preventer: set KTX_ENABLE# low to connect sun keyboard tx.
   // the pin is high on reset and boot, which pulls INT_KTX low, which keeps the
@@ -124,27 +115,13 @@ void Pinout::beginSun() {
   usb3sun_gpio_write(KTX_ENABLE, false);
 #endif
 #if defined(SUNM_ENABLE)
-  sunm->end();
-  switch (version) {
-    case 1:
-      sunmV1.setPinout(SUN_MTX_V1, SUN_MRX_V1);
-      break;
-    case 2:
-      // do nothing
-      break;
-  }
-  sunm->begin(settings.mouseBaudReal(), SERIAL_8N1);
-  // gpio invert must be set *after* setPinout/begin
-  usb3sun_gpio_set_as_inverted(sunmTx);
+  usb3sun_sunm_init(settings.mouseBaudReal());
 #endif
 }
 
 void Pinout::restartSunm() {
 #if defined(SUNM_ENABLE)
-  sunm->end();
-  sunm->begin(settings.mouseBaudReal(), SERIAL_8N1);
-  // gpio invert must be set *after* setPinout/begin
-  usb3sun_gpio_set_as_inverted(sunmTx);
+  usb3sun_sunm_init(settings.mouseBaudReal());
 #endif
 }
 

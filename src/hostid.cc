@@ -1,6 +1,7 @@
 #include "config.h"
 #include "hostid.h"
 
+#include <cstdio>
 #include <cstring>
 
 #include "bindings.h"

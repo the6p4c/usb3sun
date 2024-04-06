@@ -3,9 +3,8 @@
 
 #include "config.h"
 
-#include <Arduino.h>
-
 #include <cstddef>
+#include <cstdio>
 
 #include "bindings.h"
 #include "pinout.h"

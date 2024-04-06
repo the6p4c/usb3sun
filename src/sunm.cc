@@ -18,7 +18,7 @@ void sunmSend(int8_t x, int8_t y, bool left, bool middle, bool right) {
         (uint8_t) x, (uint8_t) -y, 0, 0,
       };
 #ifdef SUNM_ENABLE
-      size_t len = pinout.sunm->write(result, sizeof(result) / sizeof(*result));
+      size_t len = usb3sun_sunm_write(result, sizeof(result) / sizeof(*result));
 #ifdef SUNM_VERBOSE
       Sprintf("sunm: tx %02Xh %02Xh %02Xh %02Xh %02Xh = %zu\n",
         result[0], result[1], result[2], result[3], result[4], len);

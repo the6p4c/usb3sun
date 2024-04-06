@@ -2,6 +2,7 @@
 #define USB3SUN_SETTINGS_H
 
 #include <algorithm>
+#include <cstdint>
 
 #include "hal.h"
 #include "mutex.h"
@@ -44,7 +45,7 @@ struct Settings {
   SETTING(mouseBaud, 1, MouseBaud, {MouseBaud::_::S9600});
   SETTING(hostid, 1, Hostid, {'0', '0', '0', '0', '0', '0'});
 
-  unsigned long mouseBaudReal() {
+  uint32_t mouseBaudReal() {
     switch (mouseBaud()) {
       case MouseBaud::_::S1200:
         return 1200;

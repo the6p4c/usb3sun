@@ -2,16 +2,16 @@
 #define USB3SUN_PANIC_H
 
 #include "config.h"
-#include "pinout.h"
 
-#include <Arduino.h>
+#include "hal.h"
+#include "pinout.h"
 
 template<typename... Args>
 void panic2(const char *fmt, Args... args) {
     Sprint("panic: ");
     Sprintf(fmt, args...);
     Sprintln();
-    panic(fmt, args...);
+    usb3sun_panic(fmt, args...);
 }
 
 #endif
