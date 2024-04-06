@@ -107,12 +107,14 @@ void Pinout::beginSun() {
 #if defined(SUNK_ENABLE)
   usb3sun_sunk_init();
 
-  // break preventer: set KTX_ENABLE# low to connect sun keyboard tx.
-  // the pin is high on reset and boot, which pulls INT_KTX low, which keeps the
-  // KTX line connected and idle, preventing a break that would make the sun
-  // machine drop you back to the ok prompt (and maybe kernel panic on resume).
-  usb3sun_gpio_set_as_output(KTX_ENABLE);
-  usb3sun_gpio_write(KTX_ENABLE, false);
+  if (usb3sun_pinout_version() == 2) {
+    // break preventer: set KTX_ENABLE# low to connect sun keyboard tx.
+    // the pin is high on reset and boot, which pulls INT_KTX low, which keeps the
+    // KTX line connected and idle, preventing a break that would make the sun
+    // machine drop you back to the ok prompt (and maybe kernel panic on resume).
+    usb3sun_gpio_set_as_output(KTX_ENABLE);
+    usb3sun_gpio_write(KTX_ENABLE, false);
+  }
 #endif
 #if defined(SUNM_ENABLE)
   usb3sun_sunm_init(settings.mouseBaudReal());

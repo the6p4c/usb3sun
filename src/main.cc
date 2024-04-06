@@ -548,10 +548,37 @@ static bool assert_test_history(const std::vector<Op> &expected) {
   return !first_difference.has_value();
 }
 
-static std::vector<const char *> test_names = {};
+static std::vector<const char *> test_names = {
+  "setup_pinout_v1",
+  "setup_pinout_v2",
+};
 
 static bool run_test(const char *test_name) {
-  // if (!strcmp(test_name, "...")) {}
+  if (!strcmp(test_name, "setup_pinout_v1")) {
+    usb3sun_mock_gpio_read(PINOUT_V2_PIN, false);
+    setup();
+    return assert_test_history(std::vector<Op> {
+      GpioWriteOp {LED_PIN, true},
+      GpioReadOp {PINOUT_V2_PIN, false},
+      SunkInitOp {},
+      SunmInitOp {},
+      GpioWriteOp {LED_PIN, false},
+    });
+  }
+  if (!strcmp(test_name, "setup_pinout_v2")) {
+    usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
+    setup();
+    return assert_test_history(std::vector<Op> {
+      GpioWriteOp {LED_PIN, true},
+      GpioReadOp {PINOUT_V2_PIN, true},
+      PinoutV2Op {},
+      GpioWriteOp {DISPLAY_ENABLE, true},
+      SunkInitOp {},
+      GpioWriteOp {KTX_ENABLE, false},
+      SunmInitOp {},
+      GpioWriteOp {LED_PIN, false},
+    });
+  }
   std::cerr << "fatal: bad test name\n";
   std::cerr << "valid test names:\n";
   for (const char *&name : test_names) {
