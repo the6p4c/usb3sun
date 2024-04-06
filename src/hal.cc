@@ -7,6 +7,7 @@
 #include <pico/time.h>
 #include <hardware/gpio.h>
 #include <Arduino.h>
+#include <Wire.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_TinyUSB.h>
 
@@ -85,6 +86,11 @@ void usb3sun_gpio_set_as_input_pullup(uint8_t pin) {
 
 void usb3sun_gpio_set_as_input_pulldown(uint8_t pin) {
   pinMode(pin, INPUT_PULLDOWN);
+}
+
+void usb3sun_i2c_set_pinout(uint8_t scl, uint8_t sda) {
+  Wire.setSCL(scl);
+  Wire.setSDA(sda);
 }
 
 void usb3sun_buzzer_start(uint32_t pitch) {

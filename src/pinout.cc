@@ -3,10 +3,6 @@
 
 #include <cstdarg>
 
-#include <Arduino.h>
-#include <Wire.h>
-#include <Adafruit_TinyUSB.h>
-
 #include "hal.h"
 #include "settings.h"
 
@@ -96,8 +92,7 @@ void Pinout::begin() {
 
   usb3sun_gpio_set_as_output(BUZZER_PIN);
   usb3sun_gpio_set_as_output(POWER_KEY);
-  Wire.setSCL(DISPLAY_SCL);
-  Wire.setSDA(DISPLAY_SDA);
+  usb3sun_i2c_set_pinout(DISPLAY_SCL, DISPLAY_SDA);
 
 #if defined(WAIT_PIN)
   pinMode(WAIT_PIN, INPUT_PULLUP);
