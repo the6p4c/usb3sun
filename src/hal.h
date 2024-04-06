@@ -7,19 +7,75 @@
 
 extern "C" {
 
+typedef uint8_t usb3sun_pin;
+
 #ifdef USB3SUN_HAL_ARDUINO_PICO
   #include <pico/mutex.h>
   #include <hardware/sync.h>
   typedef mutex_t usb3sun_mutex;
   #define USB3SUN_MUTEX __attribute__((section(".mutex_array")))
   #define usb3sun_dmb() __dmb()
-#else
+#elifdef USB3SUN_HAL_TEST
   struct usb3sun_mutex {};
   #define USB3SUN_MUTEX // empty
   #define usb3sun_dmb() do {} while (0)
-#endif
 
-typedef uint8_t usb3sun_pin;
+  extern "C++" {
+    #include <iostream>
+    #include <variant>
+    #include <vector>
+    struct PinoutV2Op {};
+    struct SunkInitOp {};
+    struct SunkReadOp {};
+    struct SunkWriteOp { std::vector<uint8_t> data; };
+    struct SunmInitOp {};
+    struct SunmWriteOp { std::vector<uint8_t> data; };
+    struct GpioReadOp { usb3sun_pin pin; bool value; };
+    struct GpioWriteOp { usb3sun_pin pin; bool value; };
+    using Op = std::variant<
+      PinoutV2Op,
+      SunkInitOp,
+      SunkReadOp,
+      SunkWriteOp,
+      SunmInitOp,
+      SunmWriteOp,
+      GpioReadOp,
+      GpioWriteOp>;
+    struct Entry {
+      uint64_t micros;
+      Op op;
+    };
+    bool operator==(const PinoutV2Op &p, const PinoutV2Op &q);
+    bool operator==(const SunkInitOp &p, const SunkInitOp &q);
+    bool operator==(const SunkReadOp &p, const SunkReadOp &q);
+    bool operator==(const SunkWriteOp &p, const SunkWriteOp &q);
+    bool operator==(const SunmInitOp &p, const SunmInitOp &q);
+    bool operator==(const SunmWriteOp &p, const SunmWriteOp &q);
+    bool operator==(const GpioReadOp &p, const GpioReadOp &q);
+    bool operator==(const GpioWriteOp &p, const GpioWriteOp &q);
+    bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q);
+    bool operator!=(const SunkInitOp &p, const SunkInitOp &q);
+    bool operator!=(const SunkReadOp &p, const SunkReadOp &q);
+    bool operator!=(const SunkWriteOp &p, const SunkWriteOp &q);
+    bool operator!=(const SunmInitOp &p, const SunmInitOp &q);
+    bool operator!=(const SunmWriteOp &p, const SunmWriteOp &q);
+    bool operator!=(const GpioReadOp &p, const GpioReadOp &q);
+    bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q);
+    std::ostream& operator<<(std::ostream& s, const PinoutV2Op &o);
+    std::ostream& operator<<(std::ostream& s, const SunkInitOp &o);
+    std::ostream& operator<<(std::ostream& s, const SunkReadOp &o);
+    std::ostream& operator<<(std::ostream& s, const SunkWriteOp &o);
+    std::ostream& operator<<(std::ostream& s, const SunmInitOp &o);
+    std::ostream& operator<<(std::ostream& s, const SunmWriteOp &o);
+    std::ostream& operator<<(std::ostream& s, const GpioReadOp &o);
+    std::ostream& operator<<(std::ostream& s, const GpioWriteOp &o);
+    std::ostream& operator<<(std::ostream& s, const Op &o);
+    std::ostream& operator<<(std::ostream& s, const Entry& v);
+    void usb3sun_test_init(void);
+    void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);
+    const std::vector<Entry> &usb3sun_test_get_history(void);
+  }
+#endif
 
 // based on tinyusb’s tuh_hid_report_info_t
 typedef struct {

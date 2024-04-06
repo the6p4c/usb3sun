@@ -50,7 +50,7 @@ struct {
   } led;
 } hid[16];
 
-std::atomic<bool> wait = true;
+std::atomic<bool> waiting = true;
 
 Pinout pinout;
 State state;
@@ -162,7 +162,7 @@ void setup() {
 #ifdef WAIT_SERIAL
   while (Serial.read() == -1);
 #endif
-  wait = false;
+  waiting = false;
 
   usb3sun_gpio_write(LED_PIN, false);
 }
@@ -263,7 +263,7 @@ void serialEvent2() {
 #endif
 
 void setup1() {
-  while (wait);
+  while (waiting);
 
   // Check for CPU frequency, must be multiple of 120Mhz for bit-banging USB
   uint32_t cpu_hz = usb3sun_clock_speed();
@@ -515,7 +515,83 @@ out:
 
 #ifdef USB3SUN_HAL_TEST
 
-int main() {
+#include <cstring>
+#include <iostream>
+#include <unistd.h>
+#include <sys/wait.h>
+
+static bool assert_test_history(const std::vector<Op> &expected) {
+  const std::vector<Entry> &actual = usb3sun_test_get_history();
+  std::optional<size_t> first_difference{};
+  for (size_t i = 0; i < actual.size() || i < expected.size(); i++) {
+    if ((i < actual.size()) != (i < expected.size()) || actual[i].op != expected[i]) {
+      first_difference = i;
+      break;
+    }
+  }
+  if (first_difference.has_value()) {
+    std::cerr << "\nassertion failed: bad test history!\n";
+    for (size_t i = 0; i < *first_difference; i++) {
+      std::cerr << "    " << actual[i] << "\n";
+    }
+    for (size_t i = *first_difference; i < actual.size() || i < expected.size(); i++) {
+      std::cerr << "!!!";
+      if (i < actual.size()) {
+        std::cerr << " " << actual[i];
+      }
+      if (i < expected.size()) {
+        std::cerr << " (expected " << expected[i] << ")";
+      }
+      std::cerr << "\n";
+    }
+  }
+  return !first_difference.has_value();
+}
+
+static std::vector<const char *> test_names = {};
+
+static bool run_test(const char *test_name) {
+  // if (!strcmp(test_name, "...")) {}
+  std::cerr << "fatal: bad test name\n";
+  std::cerr << "valid test names:\n";
+  for (const char *&name : test_names) {
+    std::cerr << "    " << name << "\n";
+  }
+  return false;
+}
+
+int main(int argc, char **argv) {
+  if (argc == 2) {
+    const char *test_name = argv[1];
+    if (!strcmp(test_name, "all")) {
+      for (const char *&name : test_names) {
+        std::cerr << ">>> starting test: " << name << "\n";
+        test_name = name;
+        pid_t pid = fork();
+        if (pid == 0) {
+          if (run_test(test_name)) {
+            return 0;
+          } else {
+            std::cerr << ">>> test failed: " << test_name << "\n";
+            return 1;
+          }
+        } else if (pid == -1) {
+          perror("fatal: fork");
+          return 1;
+        } else {
+          int result;
+          wait(&result);
+          if (!WIFEXITED(result) || WEXITSTATUS(result) != 0) {
+            std::cerr << "fatal: wait(2) returned " << result << "\n";
+            return 1;
+          }
+        }
+      }
+      return 0;
+    }
+  }
+
+  usb3sun_test_init();
   setup();
   setup1();
   while (true) {

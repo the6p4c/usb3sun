@@ -334,6 +334,10 @@ void usb3sun_display_text(int16_t x, int16_t y, bool inverted, const char *text)
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
+#include <utility>
+#include <variant>
+#include <vector>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -342,27 +346,109 @@ static struct {
   size_t version = 1;
 } pinout;
 
+static uint64_t start_micros = usb3sun_micros();
+static std::vector<Entry> history{};
+
+// <https://en.cppreference.com/w/cpp/utility/variant/visit#Example>
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
+// <https://en.cppreference.com/w/cpp/container/vector/vector#Example>
+template<typename T>
+std::ostream& operator<<(std::ostream& s, const std::vector<T>& v) {
+  s.put('{');
+  char comma[]{'\0', ' ', '\0'};
+  for (const auto& e : v)
+    s << comma << e, comma[0] = ',';
+  return s << "}\n";
+}
+
+bool operator==(const PinoutV2Op &p, const PinoutV2Op &q) { return true; }
+bool operator==(const SunkInitOp &p, const SunkInitOp &q) { return true; }
+bool operator==(const SunkReadOp &p, const SunkReadOp &q) { return true; }
+bool operator==(const SunkWriteOp &p, const SunkWriteOp &q) { return p.data == q.data; }
+bool operator==(const SunmInitOp &p, const SunmInitOp &q) { return true; }
+bool operator==(const SunmWriteOp &p, const SunmWriteOp &q) { return p.data == q.data; }
+bool operator==(const GpioReadOp &p, const GpioReadOp &q) { return p.pin == q.pin && p.value == q.value; }
+bool operator==(const GpioWriteOp &p, const GpioWriteOp &q) { return p.pin == q.pin && p.value == q.value; }
+
+bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q) { return !(p == q); }
+bool operator!=(const SunkInitOp &p, const SunkInitOp &q) { return !(p == q); }
+bool operator!=(const SunkReadOp &p, const SunkReadOp &q) { return !(p == q); }
+bool operator!=(const SunkWriteOp &p, const SunkWriteOp &q) { return !(p == q); }
+bool operator!=(const SunmInitOp &p, const SunmInitOp &q) { return !(p == q); }
+bool operator!=(const SunmWriteOp &p, const SunmWriteOp &q) { return !(p == q); }
+bool operator!=(const GpioReadOp &p, const GpioReadOp &q) { return !(p == q); }
+bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q) { return !(p == q); }
+
+std::ostream& operator<<(std::ostream& s, const PinoutV2Op &o) { return s << "pinout_v2"; }
+std::ostream& operator<<(std::ostream& s, const SunkInitOp &o) { return s << "sunk_init"; }
+std::ostream& operator<<(std::ostream& s, const SunkReadOp &o) { return s << "sunk_read"; }
+std::ostream& operator<<(std::ostream& s, const SunkWriteOp &o) { return s << "sunk_write " << o.data; }
+std::ostream& operator<<(std::ostream& s, const SunmInitOp &o) { return s << "sunm_init"; }
+std::ostream& operator<<(std::ostream& s, const SunmWriteOp &o) { return s << "sunm_write " << o.data; }
+std::ostream& operator<<(std::ostream& s, const GpioReadOp &o) { return s << "gpio_read " << (unsigned)o.pin << " " << o.value; }
+std::ostream& operator<<(std::ostream& s, const GpioWriteOp &o) { return s << "gpio_write " << (unsigned)o.pin << " " << o.value; }
+
+std::ostream& operator<<(std::ostream& s, const Op &o) {
+  std::visit([&s](const auto &o) { s << o; }, o);
+  return s;
+}
+
+std::ostream& operator<<(std::ostream& s, const Entry& v) {
+  return s << v.micros << " (@" << (v.micros - start_micros) << ") " << v.op;
+}
+
+static void push_history(Op op) {
+  uint64_t micros = usb3sun_micros();
+  Entry entry{micros, op};
+  history.push_back(entry);
+}
+
+void usb3sun_test_init(void) {
+  usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
+}
+
+static bool mock_gpio_values[32]{};
+void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value) {
+  mock_gpio_values[pin] = value;
+}
+
+const std::vector<Entry> &usb3sun_test_get_history(void) {
+  return history;
+}
+
 size_t usb3sun_pinout_version(void) {
   return pinout.version;
 }
 
 void usb3sun_pinout_v2(void) {
+  push_history(PinoutV2Op {});
   pinout.version = 2;
 }
 
-void usb3sun_sunk_init(void) {}
+void usb3sun_sunk_init(void) {
+  push_history(SunkInitOp {});
+}
 
 int usb3sun_sunk_read(void) {
+  push_history(SunkReadOp {});
   return -1;
 }
 
 size_t usb3sun_sunk_write(uint8_t *data, size_t len) {
+  push_history(SunkWriteOp {{data, data+len}});
   return 0;
 }
 
-void usb3sun_sunm_init(uint32_t baud) {}
+void usb3sun_sunm_init(uint32_t baud) {
+  push_history(SunmInitOp {});
+}
 
 size_t usb3sun_sunm_write(uint8_t *data, size_t len) {
+  push_history(SunmWriteOp {{data, data+len}});
   return 0;
 }
 
@@ -470,10 +556,14 @@ void usb3sun_panic(const char *format, ...) {
 void usb3sun_alarm(uint32_t ms, void (*callback)(void)) {}
 
 bool usb3sun_gpio_read(usb3sun_pin pin) {
-  return false;
+  bool value = mock_gpio_values[pin];
+  push_history(GpioReadOp {pin, value});
+  return value;
 }
 
-void usb3sun_gpio_write(usb3sun_pin pin, bool value) {}
+void usb3sun_gpio_write(usb3sun_pin pin, bool value) {
+  push_history(GpioWriteOp {pin, value});
+}
 
 void usb3sun_gpio_set_as_inverted(usb3sun_pin pin) {}
 
