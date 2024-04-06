@@ -73,6 +73,8 @@ typedef uint8_t usb3sun_pin;
     std::ostream& operator<<(std::ostream& s, const Entry& v);
     void usb3sun_test_init(void);
     void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);
+    void usb3sun_mock_sunk_read(const char *data, size_t len);
+    bool usb3sun_mock_sunk_read_has_input(void);
     const std::vector<Entry> &usb3sun_test_get_history(void);
   }
 #endif

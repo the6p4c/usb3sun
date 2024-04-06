@@ -334,6 +334,8 @@ void usb3sun_display_text(int16_t x, int16_t y, bool inverted, const char *text)
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <utility>
 #include <variant>
@@ -356,13 +358,20 @@ template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 // <https://en.cppreference.com/w/cpp/container/vector/vector#Example>
-template<typename T>
-std::ostream& operator<<(std::ostream& s, const std::vector<T>& v) {
-  s.put('{');
-  char comma[]{'\0', ' ', '\0'};
-  for (const auto& e : v)
-    s << comma << e, comma[0] = ',';
-  return s << "}\n";
+std::ostream& operator<<(std::ostream& s, const std::vector<uint8_t>& v) {
+  std::ofstream old{};
+  old.copyfmt(s);
+  if (v.size() == 0) {
+    return s << "<>";
+  }
+  char separator = '<';
+  for (const auto& e : v) {
+    s << separator << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << (unsigned)e;
+    separator = ' ';
+  }
+  s << '>';
+  s.copyfmt(old);
+  return s;
 }
 
 bool operator==(const PinoutV2Op &p, const PinoutV2Op &q) { return true; }
@@ -416,6 +425,16 @@ void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value) {
   mock_gpio_values[pin] = value;
 }
 
+static std::vector<uint8_t> mock_sunk_input{};
+void usb3sun_mock_sunk_read(const char *data, size_t len) {
+  for (size_t i = 0; i < len; i++)
+    mock_sunk_input.push_back(data[i]);
+}
+
+bool usb3sun_mock_sunk_read_has_input(void) {
+  return mock_sunk_input.size() > 0;
+}
+
 const std::vector<Entry> &usb3sun_test_get_history(void) {
   return history;
 }
@@ -435,6 +454,11 @@ void usb3sun_sunk_init(void) {
 
 int usb3sun_sunk_read(void) {
   push_history(SunkReadOp {});
+  if (mock_sunk_input.size() > 0) {
+    int result = *mock_sunk_input.begin();
+    mock_sunk_input.erase(mock_sunk_input.begin());
+    return result;
+  }
   return -1;
 }
 

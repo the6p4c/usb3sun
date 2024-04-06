@@ -551,6 +551,7 @@ static bool assert_test_history(const std::vector<Op> &expected) {
 static std::vector<const char *> test_names = {
   "setup_pinout_v1",
   "setup_pinout_v2",
+  "sunk_reset",
 };
 
 static bool run_test(const char *test_name) {
@@ -577,6 +578,29 @@ static bool run_test(const char *test_name) {
       GpioWriteOp {KTX_ENABLE, false},
       SunmInitOp {},
       GpioWriteOp {LED_PIN, false},
+    });
+  }
+  if (!strcmp(test_name, "sunk_reset")) {
+    usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
+    usb3sun_mock_sunk_read("\x01", 1); // SUNK_RESET
+    setup();
+    while (usb3sun_mock_sunk_read_has_input()) {
+      serialEvent1();
+      serialEvent2();
+    }
+    return assert_test_history(std::vector<Op> {
+      GpioWriteOp {LED_PIN, true},
+      GpioReadOp {PINOUT_V2_PIN, true},
+      PinoutV2Op {},
+      GpioWriteOp {DISPLAY_ENABLE, true},
+      SunkInitOp {},
+      GpioWriteOp {KTX_ENABLE, false},
+      SunmInitOp {},
+      GpioWriteOp {LED_PIN, false},
+      SunkReadOp {},
+      SunkWriteOp {{0xFF, 0x04, 0x7F}},
+      SunkReadOp {},
+      SunkReadOp {},
     });
   }
   std::cerr << "fatal: bad test name\n";
