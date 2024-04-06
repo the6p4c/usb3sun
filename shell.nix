@@ -46,6 +46,10 @@ in
     # (ldd ~/.platformio/packages/toolchain-rp2040-earlephilhower/bin/arm-none-eabi-gdb)
     ncurses5 # libtinfo.so.5
     mpfr # libmpfr.so.6
+
+    # pio run -e native -t exec
+    # pio run -e native && stdbuf -o0 tr \\n \\r | .pio/build/native/program
+    gcc
   ]);
 
   # clear LD_LIBRARY_PATH (NixOS/nixpkgs#263201, NixOS/nixpkgs#262775, NixOS/nixpkgs#262080)

@@ -268,8 +268,7 @@ void setup1() {
   // Check for CPU frequency, must be multiple of 120Mhz for bit-banging USB
   uint32_t cpu_hz = usb3sun_clock_speed();
   if (cpu_hz != 120000000uL && cpu_hz != 240000000uL) {
-    Sprintf("error: cpu frequency %u, set [env:pico] board_build.f_cpu = 120000000L\n", cpu_hz);
-    while (true) usb3sun_sleep_micros(1'000);
+    usb3sun_panic("error: cpu frequency %u, set [env:pico] board_build.f_cpu = 120000000L\n", cpu_hz);
   }
 
   usb3sun_usb_init();
@@ -518,6 +517,11 @@ out:
 
 int main() {
   setup();
+  setup1();
+  while (true) {
+    loop();
+    loop1();
+  }
 }
 
 #endif

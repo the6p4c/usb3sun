@@ -329,14 +329,26 @@ void usb3sun_display_text(int16_t x, int16_t y, bool inverted, const char *text)
 
 #elifdef USB3SUN_HAL_TEST
 
+#include <cerrno>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
+
+#include <unistd.h>
+#include <fcntl.h>
+
+static struct {
+  size_t version = 1;
+} pinout;
 
 size_t usb3sun_pinout_version(void) {
-  abort();
+  return pinout.version;
 }
 
-void usb3sun_pinout_v2(void) {}
+void usb3sun_pinout_v2(void) {
+  pinout.version = 2;
+}
 
 void usb3sun_sunk_init(void) {}
 
@@ -377,11 +389,19 @@ size_t usb3sun_uhid_parse_report_descriptor(usb3sun_hid_report_info *result, siz
 void usb3sun_debug_init(int (*printf)(const char *format, ...)) {}
 
 int usb3sun_debug_read(void) {
+  if (fcntl(0, F_SETFL, O_NONBLOCK) == 0) {
+    uint8_t result;
+    if (read(0, &result, sizeof result) == sizeof result) {
+      return result;
+    }
+  }
   return -1;
 }
 
 bool usb3sun_debug_write(const char *data, size_t len) {
-  return fwrite(data, 1, len, stdout) == len;
+  bool ok = fwrite(data, 1, len, stdout) == len;
+  fflush(stdout);
+  return ok;
 }
 
 void usb3sun_allow_debug_over_cdc(void) {}
@@ -413,16 +433,39 @@ bool usb3sun_fifo_pop(uint32_t *result) {
 }
 
 uint64_t usb3sun_micros(void) {
-  return 0;
+  static uint64_t result = 0;
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+    result = (uint64_t)ts.tv_sec * 1'000'000
+      + (uint64_t)ts.tv_nsec / 1'000;
+  }
+  return result;
 }
 
-void usb3sun_sleep_micros(uint64_t micros) {}
+void usb3sun_sleep_micros(uint64_t micros) {
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+    ts.tv_nsec += micros * 1'000;
+    while (ts.tv_nsec > 999'999'999) {
+      ts.tv_sec += 1;
+      ts.tv_nsec -= 1'000'000'000;
+    }
+    while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, nullptr) == EINTR);
+  }
+}
 
 uint32_t usb3sun_clock_speed(void) {
-  return 0;
+  return 120'000'000;
 }
 
-void usb3sun_panic(const char *format, ...) {}
+void usb3sun_panic(const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  vfprintf(stdout, format, ap);
+  va_end(ap);
+  fflush(stdout);
+  abort();
+}
 
 void usb3sun_alarm(uint32_t ms, void (*callback)(void)) {}
 
