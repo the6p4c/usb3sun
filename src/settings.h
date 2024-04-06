@@ -4,8 +4,8 @@
 #include <algorithm>
 
 #include <CoreMutex.h>
-#include <LittleFS.h>
 
+#include "hal.h"
 #include "pinout.h"
 
 #define SETTING(_name, _version, _type, ...) \
@@ -71,40 +71,27 @@ template <typename T>
 void Settings::read(T& setting) {
   CoreMutex m{&settingsMutex};
   T result{};
-  if (File f = LittleFS.open(T::path, "r")) {
-    Sprintf("settings: read %s: opened\n", T::path);
-    if (f.readBytes(reinterpret_cast<char *>(&result), sizeof result) == sizeof result) {
-      if (result.version == T::currentVersion) {
-        setting = result;
-        Sprintf("settings: read %s: loaded\n", T::path);
-        f.close();
-        Sprintf("settings: read %s: closed\n", T::path);
-        return;
-      } else {
-        Sprintf("settings: read %s: wrong version\n", T::path);
-        f.close();
-      }
+  if (usb3sun_fs_read(T::path, reinterpret_cast<char *>(&result), sizeof result)) {
+    if (result.version == T::currentVersion) {
+      Sprintf("settings: read %s: version %u\n", T::path, T::currentVersion);
+      setting = result;
+      return;
     } else {
-        f.close();
+      Sprintf("settings: read %s: wrong version\n", T::path);
     }
+  } else {
+    Sprintf("settings: read %s: file not found\n", T::path);
   }
   setting = T{};
-  Sprintf("settings: read %s: reset\n", T::path);
 }
 
 template <typename T>
 void Settings::write(const T& setting) {
   CoreMutex m{&settingsMutex};
-  if (File f = LittleFS.open(T::path, "w")) {
-    Sprintf("settings: write %s: opened\n", T::path);
-    if (f.write(reinterpret_cast<const char *>(&setting), sizeof setting) == sizeof setting) {
-      Sprintf("settings: write %s: written\n", T::path);
-      f.close();
-      Sprintf("settings: write %s: closed\n", T::path);
-      return;
-    }
+  if (usb3sun_fs_write(T::path, reinterpret_cast<const char *>(&setting), sizeof setting)) {
+    Sprintf("settings: write %s: version %u\n", T::path, T::currentVersion);
   } else {
-    Sprintf("settings: write %s: open failed\n", T::path);
+    Sprintf("settings: write %s: failed\n", T::path);
   }
 }
 

@@ -7,6 +7,7 @@
 #include <pico/time.h>
 #include <hardware/gpio.h>
 #include <Arduino.h>
+#include <LittleFS.h>
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_TinyUSB.h>
@@ -53,6 +54,31 @@ void usb3sun_allow_debug_over_uart(void) {
   TinyUSB_Serial_Debug = &DEBUG_UART;
 #endif
   debugUart = &DEBUG_UART;
+}
+
+bool usb3sun_fs_init(void) {
+  LittleFSConfig cfg;
+  cfg.setAutoFormat(true);
+  LittleFS.setConfig(cfg);
+  return LittleFS.begin();
+}
+
+bool usb3sun_fs_read(const char *path, char *data, size_t len) {
+  if (File f = LittleFS.open(path, "r")) {
+    size_t result = f.readBytes(data, len);
+    f.close();
+    return result == len;
+  }
+  return false;
+}
+
+bool usb3sun_fs_write(const char *path, const char *data, size_t len) {
+  if (File f = LittleFS.open(path, "w")) {
+    size_t result = f.write(data, len);
+    f.close();
+    return result == len;
+  }
+  return false;
 }
 
 uint64_t usb3sun_micros(void) {

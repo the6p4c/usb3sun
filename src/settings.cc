@@ -1,13 +1,10 @@
 #include "config.h"
 #include "settings.h"
 
-#include <LittleFS.h>
+#include "hal.h"
 
 void Settings::begin() {
-  LittleFSConfig cfg;
-  cfg.setAutoFormat(true);
-  LittleFS.setConfig(cfg);
-  if (LittleFS.begin()) {
+  if (usb3sun_fs_init()) {
     Sprintln("settings: mounted");
   }
 }

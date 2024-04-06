@@ -12,6 +12,11 @@ bool usb3sun_debug_write(const char *data, size_t len);
 void usb3sun_allow_debug_over_cdc(void);
 void usb3sun_allow_debug_over_uart(void);
 
+bool usb3sun_fs_init(void);
+// returns true iff the read succeeded, otherwise data is undefined.
+bool usb3sun_fs_read(const char *path, char *data, size_t len);
+bool usb3sun_fs_write(const char *path, const char *data, size_t len);
+
 uint64_t usb3sun_micros(void);
 void usb3sun_sleep_micros(uint64_t micros);
 
