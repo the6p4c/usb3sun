@@ -520,6 +520,8 @@ out:
 #include <unistd.h>
 #include <sys/wait.h>
 
+#define TEST_REQUIRES(expr) do { fprintf(stderr, ">>> skipping test (%s)\n", #expr); return true; } while (0)
+
 static bool assert_test_history(const std::vector<Op> &expected) {
   const std::vector<Entry> &actual = usb3sun_test_get_history();
   std::optional<size_t> first_difference{};
@@ -562,8 +564,12 @@ static bool run_test(const char *test_name) {
     return assert_test_history(std::vector<Op> {
       GpioWriteOp {LED_PIN, true},
       GpioReadOp {PINOUT_V2_PIN, false},
+#ifdef SUNK_ENABLE
       SunkInitOp {},
+#endif
+#ifdef SUNM_ENABLE
       SunmInitOp {},
+#endif
       GpioWriteOp {LED_PIN, false},
     });
   }
@@ -576,13 +582,20 @@ static bool run_test(const char *test_name) {
       GpioReadOp {PINOUT_V2_PIN, true},
       PinoutV2Op {},
       GpioWriteOp {DISPLAY_ENABLE, true},
+#ifdef SUNK_ENABLE
       SunkInitOp {},
       GpioWriteOp {KTX_ENABLE, false},
+#endif
+#ifdef SUNM_ENABLE
       SunmInitOp {},
+#endif
       GpioWriteOp {LED_PIN, false},
     });
   }
   if (!strcmp(test_name, "sunk_reset")) {
+#ifndef SUNK_ENABLE
+    TEST_REQUIRES(SUNK_ENABLE);
+#endif
     usb3sun_test_init(SunkReadOp::id | SunkWriteOp::id);
     usb3sun_mock_sunk_read("\x01", 1); // SUNK_RESET
     setup();

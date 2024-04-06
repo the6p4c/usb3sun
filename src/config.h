@@ -53,8 +53,8 @@
 #define POWER_KEY 15        // ...any
                             // pin 8: +5 Vdc (orange)
 
-#define SUNK_ENABLE
-#define SUNM_ENABLE
+// -DSUNK_ENABLE in platformio.ini to enable sun keyboard interface
+// -DSUNM_ENABLE in platformio.ini to enable sun mouse interface
 
 #if defined(DEBUG_LOGGING)
 #define Sprint(...) do { pinout.debugPrint(__VA_ARGS__); } while (0)
