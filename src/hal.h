@@ -7,6 +7,14 @@
 
 extern "C" {
 
+#ifdef USB3SUN_HAL_ARDUINO_PICO
+
+#include <pico/mutex.h>
+typedef mutex_t usb3sun_mutex;
+#define USB3SUN_MUTEX __attribute__((section(".mutex_array")))
+
+#endif
+
 int usb3sun_debug_read(void);
 bool usb3sun_debug_write(const char *data, size_t len);
 void usb3sun_allow_debug_over_cdc(void);
@@ -16,6 +24,9 @@ bool usb3sun_fs_init(void);
 // returns true iff the read succeeded, otherwise data is undefined.
 bool usb3sun_fs_read(const char *path, char *data, size_t len);
 bool usb3sun_fs_write(const char *path, const char *data, size_t len);
+
+void usb3sun_mutex_lock(usb3sun_mutex *mutex);
+void usb3sun_mutex_unlock(usb3sun_mutex *mutex);
 
 uint64_t usb3sun_micros(void);
 void usb3sun_sleep_micros(uint64_t micros);

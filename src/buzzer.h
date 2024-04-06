@@ -4,7 +4,7 @@
 #include <atomic>
 #include <optional>
 
-#include <CoreMutex.h>
+#include "hal.h"
 
 struct Buzzer {
   static const unsigned long plugDuration = 125'000u;
@@ -39,6 +39,6 @@ private:
 };
 
 extern Buzzer buzzer;
-extern mutex_t buzzerMutex;
+extern usb3sun_mutex buzzerMutex;
 
 #endif

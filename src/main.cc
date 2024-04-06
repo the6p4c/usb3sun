@@ -64,8 +64,8 @@ Pinout pinout;
 State state;
 Buzzer buzzer;
 Settings settings;
-__attribute__((section(".mutex_array"))) mutex_t buzzerMutex;
-__attribute__((section(".mutex_array"))) mutex_t settingsMutex;
+USB3SUN_MUTEX usb3sun_mutex buzzerMutex;
+USB3SUN_MUTEX usb3sun_mutex settingsMutex;
 
 void drawStatus(int16_t x, int16_t y, const char *label, bool on);
 

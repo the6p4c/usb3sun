@@ -3,9 +3,8 @@
 
 #include <algorithm>
 
-#include <CoreMutex.h>
-
 #include "hal.h"
+#include "mutex.h"
 #include "pinout.h"
 
 #define SETTING(_name, _version, _type, ...) \
@@ -34,7 +33,7 @@ struct _name { \
   } \
 };
 
-extern mutex_t settingsMutex;
+extern usb3sun_mutex settingsMutex;
 
 SETTING_ENUM(ForceClick, NO, OFF, ON);
 SETTING_ENUM(MouseBaud, S1200, S2400, S4800, S9600);
@@ -69,7 +68,7 @@ extern Settings settings;
 
 template <typename T>
 void Settings::read(T& setting) {
-  CoreMutex m{&settingsMutex};
+  MutexGuard m{&settingsMutex};
   T result{};
   if (usb3sun_fs_read(T::path, reinterpret_cast<char *>(&result), sizeof result)) {
     if (result.version == T::currentVersion) {
@@ -87,7 +86,7 @@ void Settings::read(T& setting) {
 
 template <typename T>
 void Settings::write(const T& setting) {
-  CoreMutex m{&settingsMutex};
+  MutexGuard m{&settingsMutex};
   if (usb3sun_fs_write(T::path, reinterpret_cast<const char *>(&setting), sizeof setting)) {
     Sprintf("settings: write %s: version %u\n", T::path, T::currentVersion);
   } else {

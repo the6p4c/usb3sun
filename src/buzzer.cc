@@ -1,9 +1,8 @@
 #include "config.h"
 #include "buzzer.h"
 
-#include <Arduino.h>
-
 #include "hal.h"
+#include "mutex.h"
 #include "settings.h"
 #include "state.h"
 
@@ -88,12 +87,12 @@ void Buzzer::setCurrent(unsigned long t, Buzzer::State value) {
 }
 
 void Buzzer::update() {
-  CoreMutex m{&buzzerMutex};
+  MutexGuard m{&buzzerMutex};
   update0();
 }
 
 void Buzzer::click() {
-  CoreMutex m{&buzzerMutex};
+  MutexGuard m{&buzzerMutex};
   switch (settings.forceClick()) {
     case ForceClick::_::NO:
       if (!state.clickEnabled) return;
@@ -112,7 +111,7 @@ void Buzzer::click() {
 }
 
 void Buzzer::plug() {
-  CoreMutex m{&buzzerMutex};
+  MutexGuard m{&buzzerMutex};
   if (current <= Buzzer::_::PLUG2) {
     setCurrent(micros(), Buzzer::_::PLUG);
     pwmTone(plugPitch, plugDuration);
@@ -120,7 +119,7 @@ void Buzzer::plug() {
 }
 
 void Buzzer::unplug() {
-  CoreMutex m{&buzzerMutex};
+  MutexGuard m{&buzzerMutex};
   if (current <= Buzzer::_::UNPLUG2) {
     setCurrent(micros(), Buzzer::_::UNPLUG);
     pwmTone(plugPitch2, plugDuration);

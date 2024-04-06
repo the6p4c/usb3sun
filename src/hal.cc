@@ -4,6 +4,7 @@
 
 #ifdef USB3SUN_HAL_ARDUINO_PICO
 
+#include <pico/mutex.h>
 #include <pico/time.h>
 #include <hardware/gpio.h>
 #include <Arduino.h>
@@ -79,6 +80,14 @@ bool usb3sun_fs_write(const char *path, const char *data, size_t len) {
     return result == len;
   }
   return false;
+}
+
+void usb3sun_mutex_lock(usb3sun_mutex *mutex) {
+  mutex_enter_blocking(mutex);
+}
+
+void usb3sun_mutex_unlock(usb3sun_mutex *mutex) {
+  mutex_exit(mutex);
 }
 
 uint64_t usb3sun_micros(void) {
