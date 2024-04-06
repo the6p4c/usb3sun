@@ -2,10 +2,9 @@
 
 #include <cstdint>
 
-#include <Arduino.h>
-
 #include "bindings.h"
 #include "buzzer.h"
+#include "hal.h"
 #include "pinout.h"
 
 void sunkSend(bool make, uint8_t code) {
@@ -38,11 +37,11 @@ void sunkSend(bool make, uint8_t code) {
   switch (code) {
     case SUNK_POWER:
       Sprintf("sunk: power high\n");
-      digitalWrite(POWER_KEY, HIGH);
+      usb3sun_gpio_write(POWER_KEY, true);
       break;
     case SUNK_POWER | SUNK_BREAK_BIT:
       Sprintf("sunk: power low\n");
-      digitalWrite(POWER_KEY, LOW);
+      usb3sun_gpio_write(POWER_KEY, false);
       break;
   }
 }
