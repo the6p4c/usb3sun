@@ -350,6 +350,7 @@ static struct {
 
 static uint64_t start_micros = usb3sun_micros();
 static std::vector<Entry> history{};
+static uint64_t history_filter;
 
 // <https://en.cppreference.com/w/cpp/utility/variant/visit#Example>
 template<class... Ts>
@@ -411,12 +412,16 @@ std::ostream& operator<<(std::ostream& s, const Entry& v) {
 }
 
 static void push_history(Op op) {
+  if (!(std::visit([](const auto &op) { return op.id; }, op) & history_filter)) {
+    return;
+  }
   uint64_t micros = usb3sun_micros();
   Entry entry{micros, op};
   history.push_back(entry);
 }
 
-void usb3sun_test_init(void) {
+void usb3sun_test_init(uint64_t history_filter_mask) {
+  history_filter = history_filter_mask;
   usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
 }
 

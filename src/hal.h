@@ -24,14 +24,14 @@ typedef uint8_t usb3sun_pin;
     #include <iostream>
     #include <variant>
     #include <vector>
-    struct PinoutV2Op {};
-    struct SunkInitOp {};
-    struct SunkReadOp {};
-    struct SunkWriteOp { std::vector<uint8_t> data; };
-    struct SunmInitOp {};
-    struct SunmWriteOp { std::vector<uint8_t> data; };
-    struct GpioReadOp { usb3sun_pin pin; bool value; };
-    struct GpioWriteOp { usb3sun_pin pin; bool value; };
+    struct PinoutV2Op { static const uint64_t id = 1 << 0; };
+    struct SunkInitOp { static const uint64_t id = 1 << 1; };
+    struct SunkReadOp { static const uint64_t id = 1 << 2; };
+    struct SunkWriteOp { static const uint64_t id = 1 << 3; std::vector<uint8_t> data; };
+    struct SunmInitOp { static const uint64_t id = 1 << 4; };
+    struct SunmWriteOp { static const uint64_t id = 1 << 5; std::vector<uint8_t> data; };
+    struct GpioReadOp { static const uint64_t id = 1 << 6; usb3sun_pin pin; bool value; };
+    struct GpioWriteOp { static const uint64_t id = 1 << 7; usb3sun_pin pin; bool value; };
     using Op = std::variant<
       PinoutV2Op,
       SunkInitOp,
@@ -71,7 +71,7 @@ typedef uint8_t usb3sun_pin;
     std::ostream& operator<<(std::ostream& s, const GpioWriteOp &o);
     std::ostream& operator<<(std::ostream& s, const Op &o);
     std::ostream& operator<<(std::ostream& s, const Entry& v);
-    void usb3sun_test_init(void);
+    void usb3sun_test_init(uint64_t history_filter_mask);
     void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);
     void usb3sun_mock_sunk_read(const char *data, size_t len);
     bool usb3sun_mock_sunk_read_has_input(void);

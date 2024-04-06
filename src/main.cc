@@ -556,6 +556,7 @@ static std::vector<const char *> test_names = {
 
 static bool run_test(const char *test_name) {
   if (!strcmp(test_name, "setup_pinout_v1")) {
+    usb3sun_test_init(PinoutV2Op::id | SunkInitOp::id | SunmInitOp::id | GpioWriteOp::id | GpioReadOp::id);
     usb3sun_mock_gpio_read(PINOUT_V2_PIN, false);
     setup();
     return assert_test_history(std::vector<Op> {
@@ -567,6 +568,7 @@ static bool run_test(const char *test_name) {
     });
   }
   if (!strcmp(test_name, "setup_pinout_v2")) {
+    usb3sun_test_init(PinoutV2Op::id | SunkInitOp::id | SunmInitOp::id | GpioWriteOp::id | GpioReadOp::id);
     usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
     setup();
     return assert_test_history(std::vector<Op> {
@@ -581,7 +583,7 @@ static bool run_test(const char *test_name) {
     });
   }
   if (!strcmp(test_name, "sunk_reset")) {
-    usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
+    usb3sun_test_init(SunkReadOp::id | SunkWriteOp::id);
     usb3sun_mock_sunk_read("\x01", 1); // SUNK_RESET
     setup();
     while (usb3sun_mock_sunk_read_has_input()) {
@@ -589,14 +591,6 @@ static bool run_test(const char *test_name) {
       serialEvent2();
     }
     return assert_test_history(std::vector<Op> {
-      GpioWriteOp {LED_PIN, true},
-      GpioReadOp {PINOUT_V2_PIN, true},
-      PinoutV2Op {},
-      GpioWriteOp {DISPLAY_ENABLE, true},
-      SunkInitOp {},
-      GpioWriteOp {KTX_ENABLE, false},
-      SunmInitOp {},
-      GpioWriteOp {LED_PIN, false},
       SunkReadOp {},
       SunkWriteOp {{0xFF, 0x04, 0x7F}},
       SunkReadOp {},
@@ -642,7 +636,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  usb3sun_test_init();
+  usb3sun_test_init(0);
   setup();
   setup1();
   while (true) {
