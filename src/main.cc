@@ -248,6 +248,7 @@ void sunkEvent() {
     }
   }
 }
+#endif
 
 void serialEvent1() {
 #if defined(SUNK_ENABLE)
@@ -260,7 +261,6 @@ void serialEvent2() {
   sunkEvent();
 #endif
 }
-#endif
 
 void setup1() {
   while (waiting);
