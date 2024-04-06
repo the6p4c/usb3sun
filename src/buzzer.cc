@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 
+#include "hal.h"
 #include "settings.h"
 #include "state.h"
 
@@ -12,9 +13,7 @@ static int64_t alarm(alarm_id_t, void *) {
 }
 
 void Buzzer::pwmTone(unsigned int pitch, std::optional<unsigned long> duration) {
-  analogWriteRange(100);
-  analogWriteFreq(pitch);
-  analogWrite(BUZZER_PIN, 50);
+  usb3sun_buzzer_start(pitch);
   if (duration.has_value()) {
     auto unused = add_alarm_in_ms(*duration, alarm, nullptr, true);
   }

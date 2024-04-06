@@ -18,7 +18,7 @@ extern "C" {
 #include "bindings.h"
 #include "buzzer.h"
 #include "cli.h"
-#include "display.h"
+#include "hal.h"
 #include "menu.h"
 #include "pinout.h"
 #include "settings.h"
@@ -80,19 +80,19 @@ struct DefaultView : View {
     if (buzzer.current != Buzzer::_::NONE) {
       const auto x = 106;
       const auto y = 16;
-      display.fillRect(x + 6, y + 1, 2, 11, SSD1306_WHITE);
-      display.fillRect(x + 5, y + 2, 4, 10, SSD1306_WHITE);
-      display.fillRect(x + 4, y + 4, 6, 8, SSD1306_WHITE);
-      display.fillRect(x + 2, y + 9, 10, 3, SSD1306_WHITE);
-      display.fillRect(x + 1, y + 10, 12, 2, SSD1306_WHITE);
-      display.fillRect(x + 5, y + 13, 4, 1, SSD1306_WHITE);
+      usb3sun_display_rect(x + 6, y + 1, 2, 11, 0, false, true);
+      usb3sun_display_rect(x + 5, y + 2, 4, 10, 0, false, true);
+      usb3sun_display_rect(x + 4, y + 4, 6, 8, 0, false, true);
+      usb3sun_display_rect(x + 2, y + 9, 10, 3, 0, false, true);
+      usb3sun_display_rect(x + 1, y + 10, 12, 2, 0, false, true);
+      usb3sun_display_rect(x + 5, y + 13, 4, 1, 0, false, true);
     } else {
-      display.fillRect(106, 16, 14, 14, SSD1306_BLACK);
+      usb3sun_display_rect(106, 16, 14, 14, 0, true, true);
     }
   }
 
   void handleKey(const UsbkChanges &changes) override {
-    unsigned long t = micros();
+    unsigned long t = usb3sun_micros();
 
 #ifdef SUNK_ENABLE
     for (int i = 0; i < changes.dvLen; i++) {
@@ -144,7 +144,7 @@ struct DefaultView : View {
     }
 
 #ifdef DEBUG_TIMINGS
-    Sprintf("sent in %lu\n", micros() - t);
+    Sprintf("sent in %lu\n", usb3sun_micros() - t);
 #endif
   }
 };
@@ -157,15 +157,7 @@ void setup() {
   Sprintln("usb3sun " USB3SUN_VERSION);
   Sprintf("pinout: v%d\n", pinout.version);
 
-  display.begin(SSD1306_SWITCHCAPVCC, /* SCREEN_ADDRESS */ 0x3C);
-  display.setRotation(DISPLAY_ROTATION);
-  display.cp437(true);
-  display.setTextWrap(false);
-  display.setTextColor(SSD1306_WHITE, SSD1306_BLACK);
-  display.clearDisplay();
-  display.drawXBitmap(0, 0, splash_bits, 128, 32, SSD1306_WHITE);
-  display.display();
-
+  usb3sun_display_init();
   Settings::begin();
   settings.readAll();
   pinout.beginSun();
@@ -173,42 +165,31 @@ void setup() {
   View::push(&DEFAULT_VIEW);
 
 #ifdef WAIT_PIN
-  while (digitalRead(WAIT_PIN));
+  while (usb3sun_gpio_read(WAIT_PIN));
 #endif
 #ifdef WAIT_SERIAL
   while (Serial.read() == -1);
 #endif
   wait = false;
 
-  digitalWrite(LED_BUILTIN, LOW);
+  usb3sun_gpio_write(LED_BUILTIN, false);
 }
 
 void drawStatus(int16_t x, int16_t y, const char *label, bool on) {
-  if (on) {
-    display.fillRoundRect(x, y, 24, 14, 4, SSD1306_WHITE);
-    display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-    display.setCursor(x + 3, y + 4);
-    display.print(label);
-  } else {
-    display.drawRoundRect(x, y, 24, 14, 4, SSD1306_WHITE);
-    display.setTextColor(SSD1306_WHITE, SSD1306_BLACK);
-    display.setCursor(x + 3, y + 4);
-    display.print(label);
-  }
+  usb3sun_display_rect(x, y, 24, 14, 4, false, on);
+  usb3sun_display_text(x + 3, y + 4, on, label);
 }
 
 void loop() {
-  const auto t = micros();
-  display.clearDisplay();
+  const auto t = usb3sun_micros();
+  usb3sun_display_clear();
   // display.drawXBitmap(0, 0, logo_bits, 64, 16, SSD1306_WHITE);
-  display.setTextColor(SSD1306_WHITE, SSD1306_BLACK);
-  display.setCursor(0, 0);
-  display.print(USB3SUN_VERSION);
+  usb3sun_display_text(0, 0, false, USB3SUN_VERSION);
   // static int i = 0;
   // display.printf("#%d @%lu", i++, t / 1'000);
   // display.printf("usb3sun%c", t / 500'000 % 2 == 1 ? '.' : ' ');
   View::paint();
-  display.display();
+  usb3sun_display_flush();
 
 #ifdef UHID_LED_TEST
   static int z = 0;
@@ -224,7 +205,7 @@ void loop() {
     }
   }
 
-  delay(10);
+  usb3sun_sleep_micros(10'000);
 }
 
 #ifdef SUNK_ENABLE
@@ -256,7 +237,7 @@ void sunkEvent() {
         state.clickEnabled = false;
         break;
       case SUNK_LED: {
-        while (pinout.sunk->peek() == -1) delay(1);
+        while (pinout.sunk->peek() == -1) usb3sun_sleep_micros(1'000);
         uint8_t status = pinout.sunk->read();
         Sprintf("sunk: led status %02Xh\n", status);
         state.num = status & 1 << 0;
@@ -298,7 +279,7 @@ void setup1() {
   uint32_t cpu_hz = clock_get_hz(clk_sys);
   if (cpu_hz != 120000000uL && cpu_hz != 240000000uL) {
     Sprintf("error: cpu frequency %u, set [env:pico] board_build.f_cpu = 120000000L\n", cpu_hz);
-    while (true) delay(1);
+    while (true) usb3sun_sleep_micros(1'000);
   }
 
   pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
@@ -469,7 +450,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
     case HID_ITF_PROTOCOL_KEYBOARD: {
       hid_keyboard_report_t *kreport = (hid_keyboard_report_t *) report;
 
-      unsigned long t = micros();
+      unsigned long t = usb3sun_micros();
 
       for (int i = 0; i < 6; i++) {
         if (kreport->keycode[i] != USBK_RESERVED && kreport->keycode[i] < USBK_FIRST_KEYCODE) {
@@ -519,7 +500,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
       Sprintln();
 #endif
 #ifdef DEBUG_TIMINGS
-      Sprintf("diffed in %lu\n", micros() - t);
+      Sprintf("diffed in %lu\n", usb3sun_micros() - t);
 #endif
 
       View::key(changes);

@@ -1,12 +1,14 @@
 #include "config.h"
 #include "pinout.h"
-#include "settings.h"
 
 #include <cstdarg>
 
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_TinyUSB.h>
+
+#include "hal.h"
+#include "settings.h"
 
 // TODO add Print::vprintf in ArduinoCore-API Print.h
 static int vprintfDebug(const char *format, va_list ap) {
@@ -83,19 +85,18 @@ void Pinout::v2() {
   // its pcb that needs no delay, but i have another without C9 that stays black every other reset
   // unless given 15 ms of delay. tested with Q7 = 2N7000, R18 = 4K7, resetting the pico in three
   // different patterns (reset/run ms): 50/200, 250/750, 3000/1000. let’s double that just in case.
-  pinMode(DISPLAY_ENABLE, OUTPUT);
-  digitalWrite(DISPLAY_ENABLE, HIGH);
-  delay(30);
+  usb3sun_gpio_set_as_output(DISPLAY_ENABLE);
+  usb3sun_gpio_write(DISPLAY_ENABLE, true);
+  usb3sun_sleep_micros(30'000);
 }
 
 void Pinout::begin() {
   // pico led on, to be turned off at the end of setup()
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
+  usb3sun_gpio_set_as_output(LED_BUILTIN);
+  usb3sun_gpio_write(LED_BUILTIN, true);
 
-  analogWriteRange(100);
-  pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(POWER_KEY, OUTPUT);
+  usb3sun_gpio_set_as_output(BUZZER_PIN);
+  usb3sun_gpio_set_as_output(POWER_KEY);
   Wire.setSCL(DISPLAY_SCL);
   Wire.setSDA(DISPLAY_SDA);
 
@@ -104,8 +105,8 @@ void Pinout::begin() {
 #endif
 
   // check for pinout v2 (active high)
-  pinMode(PINOUT_V2_PIN, INPUT_PULLDOWN);
-  if (digitalRead(PINOUT_V2_PIN) == HIGH) {
+  usb3sun_gpio_set_as_input_pulldown(PINOUT_V2_PIN);
+  if (usb3sun_gpio_read(PINOUT_V2_PIN)) {
     v2();
   } else {
     v1();
@@ -118,15 +119,15 @@ void Pinout::beginSun() {
   sunkUart->setPinout(sunkTx, sunkRx);
   sunk->begin(1200, SERIAL_8N1);
   // gpio invert must be set *after* setPinout/begin
-  gpio_set_outover(sunkTx, GPIO_OVERRIDE_INVERT);
-  gpio_set_inover(sunkRx, GPIO_OVERRIDE_INVERT);
+  usb3sun_gpio_set_as_inverted(sunkTx);
+  usb3sun_gpio_set_as_inverted(sunkRx);
 
   // break preventer: set KTX_ENABLE# low to connect sun keyboard tx.
   // the pin is high on reset and boot, which pulls INT_KTX low, which keeps the
   // KTX line connected and idle, preventing a break that would make the sun
   // machine drop you back to the ok prompt (and maybe kernel panic on resume).
-  pinMode(KTX_ENABLE, OUTPUT);
-  digitalWrite(KTX_ENABLE, LOW);
+  usb3sun_gpio_set_as_output(KTX_ENABLE);
+  usb3sun_gpio_write(KTX_ENABLE, false);
 #endif
 #if defined(SUNM_ENABLE)
   sunm->end();
@@ -140,7 +141,7 @@ void Pinout::beginSun() {
   }
   sunm->begin(settings.mouseBaudReal(), SERIAL_8N1);
   // gpio invert must be set *after* setPinout/begin
-  gpio_set_outover(sunmTx, GPIO_OVERRIDE_INVERT);
+  usb3sun_gpio_set_as_inverted(sunmTx);
 #endif
 }
 
@@ -149,7 +150,7 @@ void Pinout::restartSunm() {
   sunm->end();
   sunm->begin(settings.mouseBaudReal(), SERIAL_8N1);
   // gpio invert must be set *after* setPinout/begin
-  gpio_set_outover(sunmTx, GPIO_OVERRIDE_INVERT);
+  usb3sun_gpio_set_as_inverted(sunmTx);
 #endif
 }
 

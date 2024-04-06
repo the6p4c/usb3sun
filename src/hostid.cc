@@ -4,22 +4,21 @@
 #include <cstring>
 
 #include "bindings.h"
-#include "display.h"
+#include "hal.h"
 
 HostidView HOSTID_VIEW{};
 
 void HostidView::handlePaint() {
-    display.setCursor(8, 8);
-    display.printf("Hostid:");
-    display.setCursor(8 + 6 * cursorIndex, 18);
-    display.print("_");
-    display.setCursor(8, 16);
-    display.printf("%c%c%c%c%c%c", hostid[0], hostid[1], hostid[2], hostid[3], hostid[4], hostid[5]);
-    display.setCursor(60, 8);
-    display.print("ENTER: ok");
-    display.setCursor(60, 16);
-    display.print("ESC: cancel");
-  }
+  char hostid_text[sizeof hostid + 1];
+  snprintf(hostid_text, sizeof hostid_text, "%c%c%c%c%c%c", hostid[0], hostid[1], hostid[2], hostid[3], hostid[4], hostid[5]);
+  hostid_text[sizeof hostid_text - 1] = '\0';
+
+  usb3sun_display_text(8, 8, false, "Hostid:");
+  usb3sun_display_text(8 + 6 * cursorIndex, 18, false, "_");
+  usb3sun_display_text(8, 16, false, hostid_text);
+  usb3sun_display_text(60, 8, false, "ENTER: ok");
+  usb3sun_display_text(60, 16, false, "ESC: cancel");
+}
 
 void HostidView::handleKey(const UsbkChanges &changes) {
   for (size_t i = 0; i < changes.selLen; i++) {

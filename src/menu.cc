@@ -6,7 +6,7 @@
 
 #include "buzzer.h"
 #include "bindings.h"
-#include "display.h"
+#include "hal.h"
 #include "hostid.h"
 #include "pinout.h"
 #include "settings.h"
@@ -74,29 +74,30 @@ static const size_t MENU_ITEM_COUNT = sizeof(MENU_ITEM_PAINTERS) / sizeof(MENU_I
 
 template<typename... Args>
 static void drawMenuItem(int16_t &marqueeX, size_t i, bool on, const char *fmt, Args... args) {
+  char label[256];
+  int label_len = snprintf(label, sizeof label, fmt, args...);
+  if (label_len >= sizeof label) {
+    // truncate the text.
+    label[sizeof label - 1] = '\0';
+  }
+
   int16_t y = 8 * (1 + i);
   if (on) {
-    int width = snprintf(NULL, 0, fmt, args...) * 6;
-    display.fillRect(4, y, 120, 8, SSD1306_WHITE);
-    display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
+    int width = label_len * 6;
+    usb3sun_display_rect(4, y, 120, 8, 0, false, true);
     if (width > 112) {
-      display.setCursor(8 - marqueeX, y);
-      display.printf(fmt, args...);
-      display.setCursor(8 - marqueeX + width + 112 / 2, y);
-      display.printf(fmt, args...);
+      usb3sun_display_text(8 - marqueeX, y, on, label);
+      usb3sun_display_text(8 - marqueeX + width + 112 / 2, y, on, label);
       marqueeX %= width + 112 / 2;
     } else {
-      display.setCursor(8, y);
-      display.printf(fmt, args...);
+      usb3sun_display_text(8, y, on, label);
     }
-    display.fillRect(0, y, 4, 8, SSD1306_BLACK);
-    display.fillRect(124, y, 4, 8, SSD1306_BLACK);
+    usb3sun_display_rect(0, y, 4, 8, 0, true, true);
+    usb3sun_display_rect(124, y, 4, 8, 0, true, true);
   } else {
-    display.setTextColor(SSD1306_WHITE, SSD1306_BLACK);
-    display.setCursor(8, y);
-    display.printf(fmt, args...);
-    display.fillRect(0, y, 8, 8, SSD1306_BLACK);
-    display.fillRect(120, y, 8, 8, SSD1306_BLACK);
+    usb3sun_display_text(8, y, on, label);
+    usb3sun_display_rect(0, y, 8, 8, 0, true, true);
+    usb3sun_display_rect(120, y, 8, 8, 0, true, true);
   }
 }
 
@@ -273,8 +274,7 @@ void MenuView::sel(uint8_t usbkSelector) {
 }
 
 void WaitView::handlePaint() {
-  display.setCursor(8, 8);
-  display.print(message);
+  usb3sun_display_text(8, 8, false, message);
 }
 
 void WaitView::handleKey(const UsbkChanges &) {}
