@@ -2,9 +2,15 @@
 #define USB3SUN_HAL_H
 
 #include <cstdbool>
+#include <cstddef>
 #include <cstdint>
 
 extern "C" {
+
+int usb3sun_debug_read(void);
+bool usb3sun_debug_write(const char *data, size_t len);
+void usb3sun_allow_debug_over_cdc(void);
+void usb3sun_allow_debug_over_uart(void);
 
 uint64_t usb3sun_micros(void);
 void usb3sun_sleep_micros(uint64_t micros);

@@ -12,9 +12,6 @@
 
 // TODO add Print::vprintf in ArduinoCore-API Print.h
 static int vprintfDebug(const char *format, va_list ap) {
-  if (!pinout.debugCdc && !pinout.debugUart) {
-    return true;
-  }
   va_list ap1;
   va_copy(ap1, ap);
   char result[256];
@@ -60,6 +57,7 @@ void Pinout::v1() {
 #if defined(DEBUG_OVER_UART) && !defined(SUNK_ENABLE)
   allowDebugOverUart();
 #endif
+  DEBUG_RP2040_PRINTF = printfDebug;
 #endif
 }
 
@@ -78,6 +76,7 @@ void Pinout::v2() {
 #if defined(DEBUG_OVER_UART)
   allowDebugOverUart();
 #endif
+  DEBUG_RP2040_PRINTF = printfDebug;
 #endif
 
   // set DISPLAY_ENABLE high to turn on the display via Q7.
@@ -155,22 +154,7 @@ void Pinout::restartSunm() {
 }
 
 bool Pinout::debugWrite(const char *data, size_t len) {
-  bool ok = true;
-  if (debugCdc) {
-    if (debugCdc->write(data, len) < len) {
-      ok = false;
-    } else {
-      debugCdc->flush();
-    }
-  }
-  if (debugUart) {
-    if (debugUart->write(data, len) < len) {
-      ok = false;
-    } else {
-      debugUart->flush();
-    }
-  }
-  return ok;
+  return usb3sun_debug_write(data, len);
 }
 
 bool Pinout::debugPrint(const char *text) {
@@ -194,20 +178,9 @@ bool Pinout::debugPrintf(const char *format, ...) {
 }
 
 void Pinout::allowDebugOverCdc() {
-  // needs to be done manually when using FreeRTOS and/or TinyUSB
-  Serial.begin(115200);
-  DEBUG_RP2040_PRINTF = printfDebug;
-  debugCdc = &Serial;
+  usb3sun_allow_debug_over_cdc();
 }
 
 void Pinout::allowDebugOverUart() {
-  DEBUG_UART.end();
-  DEBUG_UART.setPinout(DEBUG_UART_TX, DEBUG_UART_RX);
-  DEBUG_UART.setFIFOSize(4096);
-  DEBUG_UART.begin(DEBUG_UART_BAUD, SERIAL_8N1);
-  DEBUG_RP2040_PRINTF = printfDebug;
-#if CFG_TUSB_DEBUG
-  TinyUSB_Serial_Debug = &DEBUG_UART;
-#endif
-  debugUart = &DEBUG_UART;
+  usb3sun_allow_debug_over_uart();
 }

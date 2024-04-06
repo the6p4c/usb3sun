@@ -199,10 +199,9 @@ void loop() {
   rp2040.fifo.push_nb((uint32_t)message);
 #endif
 
-  if (pinout.debugUart) {
-    while (pinout.debugUart->available() > 0) {
-      handleCliInput(pinout.debugUart->read());
-    }
+  int input;
+  while ((input = usb3sun_debug_read()) != -1) {
+    handleCliInput(input);
   }
 
   usb3sun_sleep_micros(10'000);

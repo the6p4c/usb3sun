@@ -8,8 +8,51 @@
 #include <hardware/gpio.h>
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_TinyUSB.h>
 
 static Adafruit_SSD1306 display{128, 32, &Wire, /* OLED_RESET */ -1};
+static Adafruit_USBD_CDC *debugCdc = nullptr;
+static SerialUART *debugUart = nullptr;
+
+int usb3sun_debug_read(void) {
+  return debugUart ? debugUart->read() : -1;
+}
+
+bool usb3sun_debug_write(const char *data, size_t len) {
+  bool ok = true;
+  if (debugCdc) {
+    if (debugCdc->write(data, len) < len) {
+      ok = false;
+    } else {
+      debugCdc->flush();
+    }
+  }
+  if (debugUart) {
+    if (debugUart->write(data, len) < len) {
+      ok = false;
+    } else {
+      debugUart->flush();
+    }
+  }
+  return ok;
+}
+
+void usb3sun_allow_debug_over_cdc(void) {
+  // needs to be done manually when using FreeRTOS and/or TinyUSB
+  Serial.begin(115200);
+  debugCdc = &Serial;
+}
+
+void usb3sun_allow_debug_over_uart(void) {
+  DEBUG_UART.end();
+  DEBUG_UART.setPinout(DEBUG_UART_TX, DEBUG_UART_RX);
+  DEBUG_UART.setFIFOSize(4096);
+  DEBUG_UART.begin(DEBUG_UART_BAUD, SERIAL_8N1);
+#if CFG_TUSB_DEBUG
+  TinyUSB_Serial_Debug = &DEBUG_UART;
+#endif
+  debugUart = &DEBUG_UART;
+}
 
 uint64_t usb3sun_micros(void) {
   return micros();

@@ -20,8 +20,6 @@ struct Pinout {
   int version = 1;
   HardwareSerial *sunk = &SUNK_UART_V1;
   HardwareSerial *sunm = &SUNM_UART_V1;
-  Adafruit_USBD_CDC *debugCdc = nullptr;
-  SerialUART *debugUart = nullptr;
 
 private:
   pin_size_t sunkTx = SUN_KTX_V1;
