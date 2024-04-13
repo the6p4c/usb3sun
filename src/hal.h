@@ -96,6 +96,7 @@ typedef struct {
     void usb3sun_mock_uhid_parse_report_descriptor(const std::vector<usb3sun_hid_report_info> &infos);
     void usb3sun_mock_uhid_interface_protocol(uint8_t if_protocol);
     void usb3sun_mock_uhid_request_report_result(bool result);
+    void usb3sun_mock_fs_read(bool (*mock)(const char *path, char *data, size_t data_len, size_t &actual_len));
     const std::vector<Entry> &usb3sun_test_get_history(void);
     void usb3sun_test_clear_history(void);
   }

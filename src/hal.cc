@@ -469,6 +469,11 @@ void usb3sun_mock_uhid_request_report_result(bool result) {
   mock_uhid_request_report_result = result;
 }
 
+static bool (*mock_fs_read)(const char *path, char *data, size_t data_len, size_t &actual_len) = nullptr;
+void usb3sun_mock_fs_read(bool (*mock)(const char *path, char *data, size_t data_len, size_t &actual_len)) {
+  mock_fs_read = mock;
+}
+
 const std::vector<Entry> &usb3sun_test_get_history(void) {
   return history;
 }
@@ -567,7 +572,8 @@ bool usb3sun_fs_init(void) {
 }
 
 bool usb3sun_fs_read(const char *path, char *data, size_t len) {
-  return false;
+  size_t actual_len = 0xAAAAAAAAAAAAAAAA;
+  return !!mock_fs_read && mock_fs_read(path, data, len, actual_len) && actual_len == len;
 }
 
 bool usb3sun_fs_write(const char *path, const char *data, size_t len) {

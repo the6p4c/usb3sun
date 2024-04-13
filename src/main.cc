@@ -521,6 +521,7 @@ out:
 #include <sys/wait.h>
 
 #define TEST_REQUIRES(expr) do { fprintf(stderr, ">>> skipping test (%s)\n", #expr); return true; } while (0)
+#define TEST_ASSERT_EQ(actual, expected, fmt) do { if (actual != expected) { fprintf(stderr, "\nassertion failed: %s\n    actual: " fmt "\n    expected: " fmt "\n", #actual, actual, expected); return false; } } while (0)
 
 static bool assert_then_clear_test_history(const std::vector<Op> &expected) {
   const std::vector<Entry> &actual = usb3sun_test_get_history();
@@ -558,6 +559,10 @@ static std::vector<const char *> test_names = {
   "uhid_mount",
   "buzzer_bell",
   "buzzer_click",
+  "settings_read_ok",
+  "settings_read_not_found",
+  "settings_read_wrong_version",
+  "settings_read_too_short",
 };
 
 static bool run_test(const char *test_name) {
@@ -743,6 +748,55 @@ static bool run_test(const char *test_name) {
     if (!assert_then_clear_test_history(std::vector<Op> {
     })) return false;
 
+    return true;
+  }
+
+  if (!strcmp(test_name, "settings_read_ok")) {
+    usb3sun_test_init(0);
+    usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
+      if (!!strcmp(path, "/clickDuration")) return false;
+      //            [      version ][      padding ][                unsigned long ]
+      memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
+      return true;
+    });
+    setup();
+    TEST_ASSERT_EQ(settings.clickDuration(), 0x5555555555555555UL, "%ju");
+    return true;
+  }
+
+  if (!strcmp(test_name, "settings_read_not_found")) {
+    usb3sun_test_init(0);
+    usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
+      return false;
+    });
+    setup();
+    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%ju");
+    return true;
+  }
+
+  if (!strcmp(test_name, "settings_read_wrong_version")) {
+    usb3sun_test_init(0);
+    usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
+      if (!!strcmp(path, "/clickDuration")) return false;
+      //            [      version ][      padding ][                unsigned long ]
+      memcpy(data, "\x00\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
+      return true;
+    });
+    setup();
+    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%ju");
+    return true;
+  }
+
+  if (!strcmp(test_name, "settings_read_too_short")) {
+    usb3sun_test_init(0);
+    usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
+      if (!!strcmp(path, "/clickDuration")) return false;
+      //            [      version ][      padding ][                  7 bytes ]
+      memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55", actual_len = 15);
+      return true;
+    });
+    setup();
+    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%ju");
     return true;
   }
 
