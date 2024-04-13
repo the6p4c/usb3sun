@@ -577,6 +577,7 @@ static bool run_test(const char *test_name) {
       GpioWriteOp {LED_PIN, false},
     });
   }
+
   if (!strcmp(test_name, "setup_pinout_v2")) {
     usb3sun_test_init(PinoutV2Op::id | SunkInitOp::id | SunmInitOp::id | GpioWriteOp::id | GpioReadOp::id);
     usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
@@ -596,6 +597,7 @@ static bool run_test(const char *test_name) {
       GpioWriteOp {LED_PIN, false},
     });
   }
+
   if (!strcmp(test_name, "sunk_reset")) {
 #ifndef SUNK_ENABLE
     TEST_REQUIRES(SUNK_ENABLE);
@@ -614,6 +616,7 @@ static bool run_test(const char *test_name) {
       SunkReadOp {},
     });
   }
+
   if (!strcmp(test_name, "uhid_mount")) {
     usb3sun_test_init(UhidRequestReportOp::id);
     setup();
@@ -640,6 +643,7 @@ static bool run_test(const char *test_name) {
       UhidRequestReportOp {1, 1},
     });
   }
+
   if (!strcmp(test_name, "buzzer_bell")) {
 #ifndef SUNK_ENABLE
     TEST_REQUIRES(SUNK_ENABLE);
@@ -660,6 +664,7 @@ static bool run_test(const char *test_name) {
       GpioWriteOp {BUZZER_PIN, false},
     });
   }
+
   if (!strcmp(test_name, "buzzer_click")) {
 #ifndef SUNK_ENABLE
     TEST_REQUIRES(SUNK_ENABLE);
@@ -740,6 +745,7 @@ static bool run_test(const char *test_name) {
 
     return true;
   }
+
   std::cerr << "fatal: bad test name\n";
   std::cerr << "valid test names:\n";
   for (const char *&name : test_names) {
