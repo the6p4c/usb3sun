@@ -40,6 +40,7 @@ typedef struct {
     struct GpioReadOp { static const uint64_t id = 1 << 6; usb3sun_pin pin; bool value; };
     struct GpioWriteOp { static const uint64_t id = 1 << 7; usb3sun_pin pin; bool value; };
     struct UhidRequestReportOp { static const uint64_t id = 1 << 8; uint8_t dev_addr, instance; };
+    struct BuzzerStartOp { static const uint64_t id = 1 << 9; uint32_t pitch; };
     using Op = std::variant<
       PinoutV2Op,
       SunkInitOp,
@@ -49,7 +50,8 @@ typedef struct {
       SunmWriteOp,
       GpioReadOp,
       GpioWriteOp,
-      UhidRequestReportOp>;
+      UhidRequestReportOp,
+      BuzzerStartOp>;
     struct Entry {
       uint64_t micros;
       Op op;
@@ -63,6 +65,7 @@ typedef struct {
     bool operator==(const GpioReadOp &p, const GpioReadOp &q);
     bool operator==(const GpioWriteOp &p, const GpioWriteOp &q);
     bool operator==(const UhidRequestReportOp &p, const UhidRequestReportOp &q);
+    bool operator==(const BuzzerStartOp &p, const BuzzerStartOp &q);
     bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q);
     bool operator!=(const SunkInitOp &p, const SunkInitOp &q);
     bool operator!=(const SunkReadOp &p, const SunkReadOp &q);
@@ -72,6 +75,7 @@ typedef struct {
     bool operator!=(const GpioReadOp &p, const GpioReadOp &q);
     bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q);
     bool operator!=(const UhidRequestReportOp &p, const UhidRequestReportOp &q);
+    bool operator!=(const BuzzerStartOp &p, const BuzzerStartOp &q);
     std::ostream& operator<<(std::ostream& s, const PinoutV2Op &o);
     std::ostream& operator<<(std::ostream& s, const SunkInitOp &o);
     std::ostream& operator<<(std::ostream& s, const SunkReadOp &o);
@@ -83,6 +87,7 @@ typedef struct {
     std::ostream& operator<<(std::ostream& s, const UhidRequestReportOp &o);
     std::ostream& operator<<(std::ostream& s, const Op &o);
     std::ostream& operator<<(std::ostream& s, const Entry& v);
+    std::ostream& operator<<(std::ostream& s, const BuzzerStartOp& v);
     void usb3sun_test_init(uint64_t history_filter_mask);
     void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);
     void usb3sun_mock_sunk_read(const char *data, size_t len);
@@ -145,7 +150,6 @@ void usb3sun_gpio_set_as_input_pulldown(usb3sun_pin pin);
 void usb3sun_i2c_set_pinout(usb3sun_pin scl, usb3sun_pin sda);
 
 void usb3sun_buzzer_start(uint32_t pitch);
-void usb3sun_buzzer_stop(void);
 
 void usb3sun_display_init(void);
 void usb3sun_display_flush(void);

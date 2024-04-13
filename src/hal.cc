@@ -384,6 +384,7 @@ bool operator==(const SunmWriteOp &p, const SunmWriteOp &q) { return p.data == q
 bool operator==(const GpioReadOp &p, const GpioReadOp &q) { return p.pin == q.pin && p.value == q.value; }
 bool operator==(const GpioWriteOp &p, const GpioWriteOp &q) { return p.pin == q.pin && p.value == q.value; }
 bool operator==(const UhidRequestReportOp &p, const UhidRequestReportOp &q) { return p.dev_addr == q.dev_addr && p.instance == q.instance; }
+bool operator==(const BuzzerStartOp &p, const BuzzerStartOp &q) { return p.pitch == q.pitch; }
 
 bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q) { return !(p == q); }
 bool operator!=(const SunkInitOp &p, const SunkInitOp &q) { return !(p == q); }
@@ -394,6 +395,7 @@ bool operator!=(const SunmWriteOp &p, const SunmWriteOp &q) { return !(p == q); 
 bool operator!=(const GpioReadOp &p, const GpioReadOp &q) { return !(p == q); }
 bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q) { return !(p == q); }
 bool operator!=(const UhidRequestReportOp &p, const UhidRequestReportOp &q) { return !(p == q); }
+bool operator!=(const BuzzerStartOp &p, const BuzzerStartOp &q) { return !(p == q); }
 
 std::ostream& operator<<(std::ostream& s, const PinoutV2Op &o) { return s << "pinout_v2"; }
 std::ostream& operator<<(std::ostream& s, const SunkInitOp &o) { return s << "sunk_init"; }
@@ -404,6 +406,7 @@ std::ostream& operator<<(std::ostream& s, const SunmWriteOp &o) { return s << "s
 std::ostream& operator<<(std::ostream& s, const GpioReadOp &o) { return s << "gpio_read " << (unsigned)o.pin << " " << o.value; }
 std::ostream& operator<<(std::ostream& s, const GpioWriteOp &o) { return s << "gpio_write " << (unsigned)o.pin << " " << o.value; }
 std::ostream& operator<<(std::ostream& s, const UhidRequestReportOp &o) { return s << "uhid_request_report " << (unsigned)o.dev_addr << " " << (unsigned)o.instance; }
+std::ostream& operator<<(std::ostream& s, const BuzzerStartOp &o) { return s << "buzzer_start " << o.pitch; }
 
 std::ostream& operator<<(std::ostream& s, const Op &o) {
   std::visit([&s](const auto &o) { s << o; }, o);
@@ -636,9 +639,9 @@ void usb3sun_gpio_set_as_input_pulldown(usb3sun_pin pin) {}
 
 void usb3sun_i2c_set_pinout(usb3sun_pin scl, usb3sun_pin sda) {}
 
-void usb3sun_buzzer_start(uint32_t pitch) {}
-
-void usb3sun_buzzer_stop(void) {}
+void usb3sun_buzzer_start(uint32_t pitch) {
+  push_history(BuzzerStartOp {pitch});
+}
 
 void usb3sun_display_init(void) {}
 
