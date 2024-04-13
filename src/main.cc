@@ -554,6 +554,7 @@ static std::vector<const char *> test_names = {
   "setup_pinout_v1",
   "setup_pinout_v2",
   "sunk_reset",
+  "uhid_mount",
 };
 
 static bool run_test(const char *test_name) {
@@ -608,6 +609,32 @@ static bool run_test(const char *test_name) {
       SunkWriteOp {{0xFF, 0x04, 0x7F}},
       SunkReadOp {},
       SunkReadOp {},
+    });
+  }
+  if (!strcmp(test_name, "uhid_mount")) {
+    usb3sun_test_init(UhidRequestReportOp::id);
+    setup();
+
+    uint8_t empty[]{};
+    usb3sun_mock_usb_vid_pid(true, 0x045E, 0x0750); // Microsoft Wired Keyboard 600
+    usb3sun_mock_uhid_parse_report_descriptor(std::vector<usb3sun_hid_report_info> {
+        usb3sun_hid_report_info {0, 0x06, 0x0001},
+    });
+    usb3sun_mock_uhid_interface_protocol(USB3SUN_UHID_KEYBOARD);
+    usb3sun_mock_uhid_request_report_result(true);
+    tuh_hid_mount_cb(1, 0, empty, 0);
+
+    usb3sun_mock_uhid_parse_report_descriptor(std::vector<usb3sun_hid_report_info> {
+        usb3sun_hid_report_info {1, 0x01, 0x000C},
+        usb3sun_hid_report_info {3, 0x80, 0x0001},
+    });
+    usb3sun_mock_uhid_interface_protocol(0);
+    tuh_hid_mount_cb(1, 1, empty, 0);
+
+    // TODO assert something else that’s true for [1:0] but not true for [1:1]
+    return assert_test_history(std::vector<Op> {
+      UhidRequestReportOp {1, 0},
+      UhidRequestReportOp {1, 1},
     });
   }
   std::cerr << "fatal: bad test name\n";

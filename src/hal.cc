@@ -383,6 +383,7 @@ bool operator==(const SunmInitOp &p, const SunmInitOp &q) { return true; }
 bool operator==(const SunmWriteOp &p, const SunmWriteOp &q) { return p.data == q.data; }
 bool operator==(const GpioReadOp &p, const GpioReadOp &q) { return p.pin == q.pin && p.value == q.value; }
 bool operator==(const GpioWriteOp &p, const GpioWriteOp &q) { return p.pin == q.pin && p.value == q.value; }
+bool operator==(const UhidRequestReportOp &p, const UhidRequestReportOp &q) { return p.dev_addr == q.dev_addr && p.instance == q.instance; }
 
 bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q) { return !(p == q); }
 bool operator!=(const SunkInitOp &p, const SunkInitOp &q) { return !(p == q); }
@@ -392,6 +393,7 @@ bool operator!=(const SunmInitOp &p, const SunmInitOp &q) { return !(p == q); }
 bool operator!=(const SunmWriteOp &p, const SunmWriteOp &q) { return !(p == q); }
 bool operator!=(const GpioReadOp &p, const GpioReadOp &q) { return !(p == q); }
 bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q) { return !(p == q); }
+bool operator!=(const UhidRequestReportOp &p, const UhidRequestReportOp &q) { return !(p == q); }
 
 std::ostream& operator<<(std::ostream& s, const PinoutV2Op &o) { return s << "pinout_v2"; }
 std::ostream& operator<<(std::ostream& s, const SunkInitOp &o) { return s << "sunk_init"; }
@@ -401,6 +403,7 @@ std::ostream& operator<<(std::ostream& s, const SunmInitOp &o) { return s << "su
 std::ostream& operator<<(std::ostream& s, const SunmWriteOp &o) { return s << "sunm_write " << o.data; }
 std::ostream& operator<<(std::ostream& s, const GpioReadOp &o) { return s << "gpio_read " << (unsigned)o.pin << " " << o.value; }
 std::ostream& operator<<(std::ostream& s, const GpioWriteOp &o) { return s << "gpio_write " << (unsigned)o.pin << " " << o.value; }
+std::ostream& operator<<(std::ostream& s, const UhidRequestReportOp &o) { return s << "uhid_request_report " << (unsigned)o.dev_addr << " " << (unsigned)o.instance; }
 
 std::ostream& operator<<(std::ostream& s, const Op &o) {
   std::visit([&s](const auto &o) { s << o; }, o);
@@ -438,6 +441,29 @@ void usb3sun_mock_sunk_read(const char *data, size_t len) {
 
 bool usb3sun_mock_sunk_read_has_input(void) {
   return mock_sunk_input.size() > 0;
+}
+
+static uint16_t mock_uhid_vid = 0, mock_uhid_pid = 0;
+static bool mock_uhid_vid_pid_result = false;
+void usb3sun_mock_usb_vid_pid(bool result, uint16_t vid, uint16_t pid) {
+  mock_uhid_vid = vid;
+  mock_uhid_pid = pid;
+  mock_uhid_vid_pid_result = result;
+}
+
+static std::vector<usb3sun_hid_report_info> mock_uhid_report_infos{};
+void usb3sun_mock_uhid_parse_report_descriptor(const std::vector<usb3sun_hid_report_info> &infos) {
+  mock_uhid_report_infos = infos;
+}
+
+static uint8_t mock_if_protocol = 0;
+void usb3sun_mock_uhid_interface_protocol(uint8_t if_protocol) {
+  mock_if_protocol = if_protocol;
+}
+
+static bool mock_uhid_request_report_result = false;
+void usb3sun_mock_uhid_request_report_result(bool result) {
+  mock_uhid_request_report_result = result;
 }
 
 const std::vector<Entry> &usb3sun_test_get_history(void) {
@@ -486,19 +512,25 @@ void usb3sun_usb_init(void) {}
 void usb3sun_usb_task(void) {}
 
 bool usb3sun_usb_vid_pid(uint8_t dev_addr, uint16_t *vid, uint16_t *pid) {
-  return false;
+  *vid = mock_uhid_vid;
+  *pid = mock_uhid_pid;
+  return mock_uhid_vid_pid_result;
 }
 
 bool usb3sun_uhid_request_report(uint8_t dev_addr, uint8_t instance) {
-  return false;
+  push_history(UhidRequestReportOp {dev_addr, instance});
+  return mock_uhid_request_report_result;
 }
 
 uint8_t usb3sun_uhid_interface_protocol(uint8_t dev_addr, uint8_t instance) {
-  return 0;
+  return mock_if_protocol;
 }
 
 size_t usb3sun_uhid_parse_report_descriptor(usb3sun_hid_report_info *result, size_t result_len, const uint8_t *descriptor, size_t descriptor_len) {
-  return 0;
+  for (size_t i = 0; i < result_len && i < mock_uhid_report_infos.size(); i++) {
+    result[i] = mock_uhid_report_infos[i];
+  }
+  return mock_uhid_report_infos.size();
 }
 
 void usb3sun_debug_init(int (*printf)(const char *format, ...)) {}
