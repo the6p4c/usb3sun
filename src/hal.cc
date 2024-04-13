@@ -473,6 +473,10 @@ const std::vector<Entry> &usb3sun_test_get_history(void) {
   return history;
 }
 
+void usb3sun_test_clear_history(void) {
+  history.clear();
+}
+
 size_t usb3sun_pinout_version(void) {
   return pinout.version;
 }

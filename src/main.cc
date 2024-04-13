@@ -522,7 +522,7 @@ out:
 
 #define TEST_REQUIRES(expr) do { fprintf(stderr, ">>> skipping test (%s)\n", #expr); return true; } while (0)
 
-static bool assert_test_history(const std::vector<Op> &expected) {
+static bool assert_then_clear_test_history(const std::vector<Op> &expected) {
   const std::vector<Entry> &actual = usb3sun_test_get_history();
   std::optional<size_t> first_difference{};
   for (size_t i = 0; i < actual.size() || i < expected.size(); i++) {
@@ -547,6 +547,7 @@ static bool assert_test_history(const std::vector<Op> &expected) {
       std::cerr << "\n";
     }
   }
+  usb3sun_test_clear_history();
   return !first_difference.has_value();
 }
 
@@ -556,6 +557,7 @@ static std::vector<const char *> test_names = {
   "sunk_reset",
   "uhid_mount",
   "buzzer_bell",
+  "buzzer_click",
 };
 
 static bool run_test(const char *test_name) {
@@ -563,7 +565,7 @@ static bool run_test(const char *test_name) {
     usb3sun_test_init(PinoutV2Op::id | SunkInitOp::id | SunmInitOp::id | GpioWriteOp::id | GpioReadOp::id);
     usb3sun_mock_gpio_read(PINOUT_V2_PIN, false);
     setup();
-    return assert_test_history(std::vector<Op> {
+    return assert_then_clear_test_history(std::vector<Op> {
       GpioWriteOp {LED_PIN, true},
       GpioReadOp {PINOUT_V2_PIN, false},
 #ifdef SUNK_ENABLE
@@ -579,7 +581,7 @@ static bool run_test(const char *test_name) {
     usb3sun_test_init(PinoutV2Op::id | SunkInitOp::id | SunmInitOp::id | GpioWriteOp::id | GpioReadOp::id);
     usb3sun_mock_gpio_read(PINOUT_V2_PIN, true);
     setup();
-    return assert_test_history(std::vector<Op> {
+    return assert_then_clear_test_history(std::vector<Op> {
       GpioWriteOp {LED_PIN, true},
       GpioReadOp {PINOUT_V2_PIN, true},
       PinoutV2Op {},
@@ -605,7 +607,7 @@ static bool run_test(const char *test_name) {
       serialEvent1();
       serialEvent2();
     }
-    return assert_test_history(std::vector<Op> {
+    return assert_then_clear_test_history(std::vector<Op> {
       SunkReadOp {},
       SunkWriteOp {{0xFF, 0x04, 0x7F}},
       SunkReadOp {},
@@ -633,7 +635,7 @@ static bool run_test(const char *test_name) {
     tuh_hid_mount_cb(1, 1, empty, 0);
 
     // TODO assert something else that’s true for [1:0] but not true for [1:1]
-    return assert_test_history(std::vector<Op> {
+    return assert_then_clear_test_history(std::vector<Op> {
       UhidRequestReportOp {1, 0},
       UhidRequestReportOp {1, 1},
     });
@@ -649,7 +651,7 @@ static bool run_test(const char *test_name) {
       serialEvent1();
       serialEvent2();
     }
-    return assert_test_history(std::vector<Op> {
+    return assert_then_clear_test_history(std::vector<Op> {
       GpioWriteOp {LED_PIN, true},
       GpioWriteOp {DISPLAY_ENABLE, true},
       GpioWriteOp {KTX_ENABLE, false},
@@ -657,6 +659,86 @@ static bool run_test(const char *test_name) {
       BuzzerStartOp {2083},
       GpioWriteOp {BUZZER_PIN, false},
     });
+  }
+  if (!strcmp(test_name, "buzzer_click")) {
+#ifndef SUNK_ENABLE
+    TEST_REQUIRES(SUNK_ENABLE);
+#endif
+    const auto pumpSunkInput = []() {
+      while (usb3sun_mock_sunk_read_has_input()) {
+        serialEvent1();
+        serialEvent2();
+      }
+    };
+    const auto pressKey = []() {
+      sunkSend(true, SUNK_RETURN);
+      sunkSend(false, SUNK_RETURN);
+    };
+    const auto pumpBuzzerUpdates = []() {
+      uint64_t t_start = usb3sun_micros();
+      while (usb3sun_micros() - t_start < 5'000) {
+        loop1();
+      }
+      loop1();
+    };
+    usb3sun_test_init(BuzzerStartOp::id | GpioWriteOp::id);
+    usb3sun_mock_sunk_read("\x01\x02", 2); // SUNK_RESET, SUNK_BELL_ON
+
+    // get the setup out of the way.
+    setup();
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      GpioWriteOp {LED_PIN, true},
+      GpioWriteOp {DISPLAY_ENABLE, true},
+      GpioWriteOp {KTX_ENABLE, false},
+      GpioWriteOp {LED_PIN, false},
+    })) return false;
+
+    // no click by default.
+    pumpSunkInput();
+    pressKey();
+    pumpBuzzerUpdates();
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      BuzzerStartOp {2083},
+    })) return false;
+
+    // click when workstation enables click mode.
+    usb3sun_mock_sunk_read("\x0A", 1); // SUNK_CLICK_ON
+    pumpSunkInput();
+    pressKey();
+    pumpBuzzerUpdates();
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      BuzzerStartOp {1000},
+      BuzzerStartOp {2083},
+    })) return false;
+
+    // no click when workstation disables click mode.
+    usb3sun_mock_sunk_read("\x0B", 1); // SUNK_CLICK_OFF
+    pumpSunkInput();
+    pressKey();
+    pumpBuzzerUpdates();
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // click when forceClick is on, even when click mode is disabled.
+    settings.forceClick().current = ForceClick::_::ON;
+    pumpSunkInput();
+    pressKey();
+    pumpBuzzerUpdates();
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      BuzzerStartOp {1000},
+      BuzzerStartOp {2083},
+    })) return false;
+
+    // no click when forceClick is off, even when click mode is enabled.
+    settings.forceClick().current = ForceClick::_::OFF;
+    usb3sun_mock_sunk_read("\x0A", 1); // SUNK_CLICK_ON
+    pumpSunkInput();
+    pressKey();
+    pumpBuzzerUpdates();
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    return true;
   }
   std::cerr << "fatal: bad test name\n";
   std::cerr << "valid test names:\n";
