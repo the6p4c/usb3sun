@@ -694,6 +694,8 @@ int main(int argc, char **argv) {
         }
       }
       return 0;
+    } else {
+      return run_test(test_name) ? 0 : 1;
     }
   }
 
