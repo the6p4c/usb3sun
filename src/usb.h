@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include "bindings.h"
+
 // hid interface protocol
 #define USB3SUN_UHID_KEYBOARD 1
 #define USB3SUN_UHID_MOUSE 2
@@ -19,6 +21,25 @@ struct __attribute__((packed)) UsbmReport {
   int8_t y;
   int8_t wheel;
   int8_t pan;
+};
+
+const uint16_t ASCII_TO_USBK[128] = {
+    /* 00h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 08h */ 0, 0, USBK_RETURN, 0, 0, 0, 0, 0,
+    /* 10h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 18h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 20h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 28h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 30h */ USBK_0, USBK_1, USBK_2, USBK_3, USBK_4, USBK_5, USBK_6, USBK_7,
+    /* 38h */ USBK_8, USBK_9, 0, 0, 0, 0, 0, 0,
+    /* 40h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 48h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 50h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 58h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 60h */ 0, USBK_A, USBK_B, USBK_C, USBK_D, USBK_E, USBK_F, 0,
+    /* 68h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 70h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 78h */ 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
 #endif

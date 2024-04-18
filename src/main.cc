@@ -523,6 +523,10 @@ out:
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
 #define TEST_REQUIRES(expr) do { fprintf(stderr, ">>> skipping test (%s)\n", #expr); return true; } while (0)
@@ -817,14 +821,167 @@ static bool run_test(const char *test_name) {
   return false;
 }
 
+static void handleDemoInput(std::optional<char> cur, const struct termios &termiosOrig) {
+  static enum {
+    NORMAL,
+    ESC,
+    CSI,
+  } inputState = NORMAL;
+  static auto inputStatePrev = inputState;
+  auto t = usb3sun_micros();
+  static auto tPrev = t;
+  auto delta = t - tPrev;
+  switch (inputState) {
+    case NORMAL: {
+      if (cur.has_value()) {
+        switch (*cur) {
+          case '\x1B': // escape/alt in terminal (^[)
+            inputState = ESC;
+            break;
+          case 'q':
+            if (tcsetattr(0, TCSAFLUSH, &termiosOrig) == -1) {
+              perror("tcsetattr");
+            }
+            exit(0);
+            break;
+          default:
+            if (auto usbk = ASCII_TO_USBK[*cur]) {
+              View::key(UsbkChanges {{}, {}, {{(uint8_t)usbk, true}}, 0, 1});
+              View::key(UsbkChanges {{}, {}, {{(uint8_t)usbk, false}}, 0, 1});
+            } else {
+              Sprintf("\033[33m%02X\033[0m", *cur);
+            }
+            break;
+        }
+      }
+    } break;
+    case ESC: {
+      if (cur.has_value()) {
+        switch (*cur) {
+          case '[': // control sequence introducer (^[[)
+            inputState = CSI;
+            goto end;
+          case ' ':
+            View::key(UsbkChanges {{USBK_CTRL_R}, {{USBK_CTRL_R, true}}, {{USBK_SPACE, true}}, 1, 1});
+            View::key(UsbkChanges {{}, {{USBK_CTRL_R, false}}, {{USBK_SPACE, false}}, 1, 1});
+            break;
+          default:
+            if (*cur >= ' ' && *cur <= '~') {
+              Sprintf("\033[33m^[\033[0m%c", *cur);
+            } else {
+              Sprintf("\033[33m^[%02X\033[0m", *cur);
+            }
+            break;
+        }
+        inputState = NORMAL;
+      } else {
+        // escape key
+        View::key(UsbkChanges {{}, {}, {{USBK_ESCAPE, true}}, 0, 1});
+        View::key(UsbkChanges {{}, {}, {{USBK_ESCAPE, false}}, 0, 1});
+        inputState = NORMAL;
+      }
+    } break;
+    case CSI: {
+      if (cur.has_value()) {
+        switch (*cur) {
+          case 'A': // CUU
+            View::key(UsbkChanges {{}, {}, {{USBK_UP, true}}, 0, 1});
+            View::key(UsbkChanges {{}, {}, {{USBK_UP, false}}, 0, 1});
+            break;
+          case 'B': // CUD
+            View::key(UsbkChanges {{}, {}, {{USBK_DOWN, true}}, 0, 1});
+            View::key(UsbkChanges {{}, {}, {{USBK_DOWN, false}}, 0, 1});
+            break;
+          case 'C': // CUF
+            View::key(UsbkChanges {{}, {}, {{USBK_RIGHT, true}}, 0, 1});
+            View::key(UsbkChanges {{}, {}, {{USBK_RIGHT, false}}, 0, 1});
+            break;
+          case 'D': // CUB
+            View::key(UsbkChanges {{}, {}, {{USBK_LEFT, true}}, 0, 1});
+            View::key(UsbkChanges {{}, {}, {{USBK_LEFT, false}}, 0, 1});
+            break;
+        }
+        if (*cur >= 0x40 && *cur <= 0x7E) {
+          inputState = NORMAL;
+        }
+      }
+    } break;
+    default: abort();
+  }
+end:
+  // if (inputStatePrev != inputState) {
+  //   fprintf(stderr, ">>> %d\n", inputState);
+  // }
+  inputStatePrev = inputState;
+  tPrev = t;
+}
+
+static void initDisplay(const char *outputPath) {
+  fprintf(stderr, ">>> to see the display, cat %s\n", outputPath);
+  if (mkfifo(outputPath, 0666) == -1) {
+    if (errno != EEXIST) {
+      perror("mkfifo");
+      return;
+    }
+  }
+  if (auto fd = open(outputPath, O_WRONLY); fd != -1) {
+    usb3sun_mock_display_output(fd);
+  } else {
+    perror("open");
+  }
+}
+
 int main(int argc, char **argv) {
-  if (argc == 2) {
+  if (argc >= 2) {
     const char *test_name = argv[1];
     if (!strcmp(test_name, "demo")) {
+      if (argc >= 3) {
+        initDisplay(argv[2]);
+      } else {
+        char displayPath[] = "/tmp/usb3sun.XXXXXX\0display";
+        if (mkdtemp(displayPath)) {
+          displayPath[19] = '/';
+          initDisplay(displayPath);
+        } else {
+          perror("mkdtemp");
+        }
+      }
+      struct termios termios;
+      struct termios termiosOrig;
+      if (tcgetattr(0, &termios) == -1) {
+        perror("tcgetattr");
+      } else {
+        termiosOrig = termios;
+        // turn off canonical mode, so we can read input immediately
+        termios.c_lflag &= ~ICANON;
+        // turn off local echo
+        termios.c_lflag &= ~ECHO;
+        if (tcsetattr(0, TCSAFLUSH, &termios) == -1) {
+          perror("tcsetattr");
+        }
+      }
       usb3sun_test_init(0);
       setup();
       setup1();
       while (true) {
+        constexpr size_t escAltTimeout = 100'000ul;
+        static char prev = '\0';
+        static uint64_t tLastEsc = usb3sun_micros();
+        bool hadInput = false;
+        int input;
+        while ((input = usb3sun_debug_read()) != -1) {
+          handleDemoInput(input, termiosOrig);
+          hadInput = true;
+          prev = input;
+          if (input == /* ESC */ '\033') {
+            tLastEsc = usb3sun_micros();
+          }
+        }
+        if (!hadInput && prev == /* ESC */ '\033') {
+          if (usb3sun_micros() - tLastEsc > escAltTimeout) {
+            handleDemoInput({}, termiosOrig);
+          }
+        }
         loop();
         loop1();
       }
