@@ -570,6 +570,14 @@ static std::vector<const char *> test_names = {
   "settings_read_too_short",
 };
 
+static void help() {
+  std::cerr << "usage: path/to/program <demo|all|test_name>\n";
+  std::cerr << "...where test_name can be one of:\n";
+  for (const char *&name : test_names) {
+    std::cerr << "    " << name << "\n";
+  }
+}
+
 static bool run_test(const char *test_name) {
   if (!strcmp(test_name, "setup_pinout_v1")) {
     usb3sun_test_init(PinoutV2Op::id | SunkInitOp::id | SunmInitOp::id | GpioWriteOp::id | GpioReadOp::id);
@@ -805,18 +813,22 @@ static bool run_test(const char *test_name) {
     return true;
   }
 
-  std::cerr << "fatal: bad test name\n";
-  std::cerr << "valid test names:\n";
-  for (const char *&name : test_names) {
-    std::cerr << "    " << name << "\n";
-  }
+  help();
   return false;
 }
 
 int main(int argc, char **argv) {
   if (argc == 2) {
     const char *test_name = argv[1];
-    if (!strcmp(test_name, "all")) {
+    if (!strcmp(test_name, "demo")) {
+      usb3sun_test_init(0);
+      setup();
+      setup1();
+      while (true) {
+        loop();
+        loop1();
+      }
+    } else if (!strcmp(test_name, "all")) {
       for (const char *&name : test_names) {
         std::cerr << ">>> starting test: " << name << "\n";
         test_name = name;
@@ -845,14 +857,8 @@ int main(int argc, char **argv) {
       return run_test(test_name) ? 0 : 1;
     }
   }
-
-  usb3sun_test_init(0);
-  setup();
-  setup1();
-  while (true) {
-    loop();
-    loop1();
-  }
+  help();
+  return 0;
 }
 
 #endif
