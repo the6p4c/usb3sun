@@ -25,9 +25,10 @@ struct Buzzer {
 
   State current;
   unsigned long since;
+  std::optional<unsigned long> temporaryClickDuration{};
 
   void update();
-  void click();
+  void click(std::optional<unsigned long> temporaryDuration = {});
   void plug();
   void unplug();
 
@@ -36,6 +37,7 @@ private:
   void setCurrent(unsigned long t, State value);
   void update0();
   void pwmTone(unsigned int pitch, std::optional<unsigned long> duration = {});
+  unsigned long clickDuration() const;
 };
 
 extern Buzzer buzzer;

@@ -27,9 +27,10 @@ void Buzzer::update0() {
       }
       break;
     case _::CLICK:
-      if (!isExpired(t, settings.clickDuration() * 1'000uL)) {
+      if (!isExpired(t, clickDuration() * 1'000uL)) {
         return;
       }
+      temporaryClickDuration = {};
       break;
     case _::PLUG:
       if (!isExpired(t, plugDuration)) {
@@ -81,12 +82,16 @@ void Buzzer::setCurrent(unsigned long t, Buzzer::State value) {
   since = t;
 }
 
+unsigned long Buzzer::clickDuration() const {
+  return temporaryClickDuration.value_or(settings.clickDuration());
+}
+
 void Buzzer::update() {
   MutexGuard m{&buzzerMutex};
   update0();
 }
 
-void Buzzer::click() {
+void Buzzer::click(std::optional<unsigned long> temporaryDuration) {
   MutexGuard m{&buzzerMutex};
   switch (settings.forceClick()) {
     case ForceClick::_::NO:
@@ -101,7 +106,7 @@ void Buzzer::click() {
   if (current <= Buzzer::_::CLICK) {
     // violation of sparc keyboard spec :) but distinguishable from bell!
     setCurrent(usb3sun_micros(), Buzzer::_::CLICK);
-    pwmTone(1'000u, settings.clickDuration());
+    pwmTone(1'000u, clickDuration());
   }
 }
 
