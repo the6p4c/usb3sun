@@ -16,6 +16,7 @@
 
 MenuView MENU_VIEW{};
 WaitView WAIT_VIEW{};
+SaveSettingsView SAVE_SETTINGS_VIEW{};
 
 template<typename... Args>
 static void drawMenuItem(int16_t &marqueeX, size_t i, bool on, const char *fmt, Args... args);
@@ -30,6 +31,8 @@ enum class MenuItem : size_t {
   WipeIdprom,
 };
 
+static Settings newSettings;
+
 using MenuItemPainter = void (*)(int16_t &marqueeX, size_t i, bool on);
 static const MenuItemPainter MENU_ITEM_PAINTERS[] = {
   [](int16_t &marqueeX, size_t i, bool on) {
@@ -37,30 +40,30 @@ static const MenuItemPainter MENU_ITEM_PAINTERS[] = {
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Force click: %s",
-      settings.forceClick() == ForceClick::_::NO ? "no"
-      : settings.forceClick() == ForceClick::_::OFF ? "off"
-      : settings.forceClick() == ForceClick::_::ON ? "on"
+      newSettings.forceClick() == ForceClick::_::NO ? "no"
+      : newSettings.forceClick() == ForceClick::_::OFF ? "off"
+      : newSettings.forceClick() == ForceClick::_::ON ? "on"
       : "?");
   },
   [](int16_t &marqueeX, size_t i, bool on) {
-    drawMenuItem(marqueeX, i, on, "Click duration: %u ms", settings.clickDuration());
+    drawMenuItem(marqueeX, i, on, "Click duration: %u ms", newSettings.clickDuration());
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Mouse baud: %s",
-      settings.mouseBaud() == MouseBaud::_::S1200 ? "1200"
-      : settings.mouseBaud() == MouseBaud::_::S2400 ? "2400"
-      : settings.mouseBaud() == MouseBaud::_::S4800 ? "4800"
-      : settings.mouseBaud() == MouseBaud::_::S9600 ? "9600"
+      newSettings.mouseBaud() == MouseBaud::_::S1200 ? "1200"
+      : newSettings.mouseBaud() == MouseBaud::_::S2400 ? "2400"
+      : newSettings.mouseBaud() == MouseBaud::_::S4800 ? "4800"
+      : newSettings.mouseBaud() == MouseBaud::_::S9600 ? "9600"
       : "?");
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Hostid: %c%c%c%c%c%c",
-      settings.hostidRef()[0],
-      settings.hostidRef()[1],
-      settings.hostidRef()[2],
-      settings.hostidRef()[3],
-      settings.hostidRef()[4],
-      settings.hostidRef()[5]);
+      newSettings.hostidRef()[0],
+      newSettings.hostidRef()[1],
+      newSettings.hostidRef()[2],
+      newSettings.hostidRef()[3],
+      newSettings.hostidRef()[4],
+      newSettings.hostidRef()[5]);
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Reprogram idprom");
@@ -117,6 +120,7 @@ void MenuView::open() {
   isOpen = true;
   selectedItem = 0u;
   topItem = 0u;
+  newSettings = settings;
   View::push(&MENU_VIEW);
 }
 
@@ -147,48 +151,47 @@ void MenuView::sel(uint8_t usbkSelector) {
     case USBK_RIGHT:
       switch (selectedItem) {
         case (size_t)MenuItem::ForceClick:
-          ++settings.forceClick();
-          settings.write(settings.forceClick_field);
+          ++newSettings.forceClick();
           break;
         case (size_t)MenuItem::ClickDuration:
-          if (settings.clickDuration() < 96u) {
-            settings.clickDuration() += 5u;
-            settings.write(settings.clickDuration_field);
-            buzzer.click();
+          if (newSettings.clickDuration() < 96u) {
+            newSettings.clickDuration() += 5u;
+            buzzer.click(newSettings.clickDuration());
           }
           break;
         case (size_t)MenuItem::MouseBaud:
-          ++settings.mouseBaud();
-          settings.write(settings.mouseBaud_field);
-          pinout.restartSunm();
+          ++newSettings.mouseBaud();
           break;
       }
       break;
     case USBK_LEFT:
       switch (selectedItem) {
         case (size_t)MenuItem::ForceClick:
-          --settings.forceClick();
-          settings.write(settings.forceClick_field);
+          --newSettings.forceClick();
           break;
         case (size_t)MenuItem::ClickDuration:
-          if (settings.clickDuration() > 4u) {
-            settings.clickDuration() -= 5u;
-            settings.write(settings.clickDuration_field);
-            buzzer.click();
+          if (newSettings.clickDuration() > 4u) {
+            newSettings.clickDuration() -= 5u;
+            buzzer.click(newSettings.clickDuration());
           }
           break;
         case (size_t)MenuItem::MouseBaud:
-          --settings.mouseBaud();
-          settings.write(settings.mouseBaud_field);
-          pinout.restartSunm();
+          --newSettings.mouseBaud();
           break;
       }
       break;
     case USBK_RETURN:
     case USBK_ENTER:
       switch (selectedItem) {
+        case (size_t)MenuItem::GoBack:
+          if (newSettings != settings) {
+            SAVE_SETTINGS_VIEW.open("");
+          } else {
+            close();
+          }
+          break;
         case (size_t)MenuItem::Hostid:
-          HOSTID_VIEW.open(settings.hostid());
+          HOSTID_VIEW.open(&newSettings.hostid());
           break;
         case (size_t)MenuItem::ReprogramIdprom: {
           WAIT_VIEW.open("Reprogramming...");
@@ -290,6 +293,72 @@ void WaitView::open(const char *message) {
 }
 
 void WaitView::close() {
+  if (!isOpen)
+    return;
+  View::pop();
+  isOpen = false;
+}
+
+void SaveSettingsView::handlePaint() {
+  usb3sun_display_hline(4, 8 + 6, 6 * 20 - 1, false, 4);
+  usb3sun_display_hline(4, 16 + 6, 6 * 20 - 1, false, 4);
+  usb3sun_display_hline(4, 24 + 6, 6 * 20 - 1, false, 4);
+  usb3sun_display_text(4, 8, false, "ENTER\377\377save settings", true);
+  usb3sun_display_text(4, 16, false, "N\377\377\377\377\377\377\377\377\377don't save", true);
+  usb3sun_display_text(4, 24, false, "ESC\377\377\377\377\377\377\377\377\377\377go back", true);
+}
+
+void SaveSettingsView::handleKey(const UsbkChanges &changes) {
+  for (size_t i = 0; i < changes.selLen; i++) {
+    if (changes.sel[i].make) {
+      switch (changes.sel[i].usbkSelector) {
+        case USBK_RETURN:
+        case USBK_ENTER: {
+          bool doRestartSunm = false;
+          if (newSettings.clickDuration() != settings.clickDuration()) {
+            settings.clickDuration() = newSettings.clickDuration();
+            settings.write(settings.clickDuration_field);
+          }
+          if (newSettings.forceClick() != settings.forceClick()) {
+            settings.forceClick() = newSettings.forceClick();
+            settings.write(settings.forceClick_field);
+          }
+          if (newSettings.mouseBaud() != settings.mouseBaud()) {
+            settings.mouseBaud() = newSettings.mouseBaud();
+            settings.write(settings.mouseBaud_field);
+            doRestartSunm = true;
+          }
+          if (newSettings.hostid() != settings.hostid()) {
+            settings.hostid() = newSettings.hostid();
+            settings.write(settings.hostid_field);
+          }
+          if (doRestartSunm) {
+            pinout.restartSunm();
+          }
+          close();
+          MENU_VIEW.close();
+        } break;
+        case USBK_N:
+          close();
+          MENU_VIEW.close();
+          break;
+        case USBK_ESCAPE:
+          close();
+          break;
+      }
+    }
+  }
+}
+
+void SaveSettingsView::open(const char *message) {
+  if (isOpen)
+    return;
+  isOpen = true;
+  this->message = message;
+  View::push(&SAVE_SETTINGS_VIEW);
+}
+
+void SaveSettingsView::close() {
   if (!isOpen)
     return;
   View::pop();

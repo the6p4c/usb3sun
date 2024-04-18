@@ -10,8 +10,11 @@
 HostidView HOSTID_VIEW{};
 
 void HostidView::handlePaint() {
-  char hostid_text[sizeof hostid + 1];
-  snprintf(hostid_text, sizeof hostid_text, "%c%c%c%c%c%c", hostid.value[0], hostid.value[1], hostid.value[2], hostid.value[3], hostid.value[4], hostid.value[5]);
+  char hostid_text[sizeof newHostid + 1];
+  snprintf(
+    hostid_text, sizeof hostid_text, "%c%c%c%c%c%c",
+    newHostid.value[0], newHostid.value[1], newHostid.value[2],
+    newHostid.value[3], newHostid.value[4], newHostid.value[5]);
   hostid_text[sizeof hostid_text - 1] = '\0';
 
   usb3sun_display_text(8, 8, false, "Hostid:");
@@ -94,18 +97,18 @@ void HostidView::handleKey(const UsbkChanges &changes) {
   }
 }
 
-void HostidView::open(const Hostid currentHostid) {
+void HostidView::open(Hostid *hostidInOut) {
   if (isOpen)
     return;
   isOpen = true;
-  memcpy(hostid.value, currentHostid.value, 6);
+  memcpy(newHostid.value, hostidInOut->value, 6);
+  this->hostidOut = hostidInOut;
   cursorIndex = 0;
   View::push(&HOSTID_VIEW);
 }
 
 void HostidView::ok() {
-  memcpy(settings.hostidMut(), hostid.value, 6);
-  settings.write(settings.hostid_field);
+  memcpy(hostidOut->value, newHostid.value, 6);
   cancel();
 }
 
@@ -125,6 +128,6 @@ void HostidView::right() {
 }
 
 void HostidView::type(unsigned char digit) {
-  hostid.value[cursorIndex] = digit;
+  newHostid.value[cursorIndex] = digit;
   right();
 }

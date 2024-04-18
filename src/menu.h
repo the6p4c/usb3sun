@@ -30,6 +30,16 @@ struct WaitView : View {
   void close();
 };
 
+struct SaveSettingsView : View {
+  bool isOpen = false;
+  const char *message = "";
+
+  void handlePaint() override;
+  void handleKey(const UsbkChanges &) override;
+  void open(const char *message);
+  void close();
+};
+
 extern MenuView MENU_VIEW;
 extern WaitView WAIT_VIEW;
 extern SaveSettingsView SAVE_SETTINGS_VIEW;
