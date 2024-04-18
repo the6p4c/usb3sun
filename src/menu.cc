@@ -243,12 +243,14 @@ void MenuView::sel(uint8_t usbkSelector) {
           sunkSend("banner\n");
 
           WAIT_VIEW.close();
+          close();
         } break;
         case (size_t)MenuItem::WipeIdprom: {
           WAIT_VIEW.open("Wiping...");
           for (unsigned i = 0; i < 0xF; i++)
             sunkSend("aa %x mkp\n", i);
           WAIT_VIEW.close();
+          close();
         } break;
         default:
           close();
