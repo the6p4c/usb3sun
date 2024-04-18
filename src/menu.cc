@@ -55,12 +55,12 @@ static const MenuItemPainter MENU_ITEM_PAINTERS[] = {
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Hostid: %c%c%c%c%c%c",
-      settings.hostid()[0],
-      settings.hostid()[1],
-      settings.hostid()[2],
-      settings.hostid()[3],
-      settings.hostid()[4],
-      settings.hostid()[5]);
+      settings.hostidRef()[0],
+      settings.hostidRef()[1],
+      settings.hostidRef()[2],
+      settings.hostidRef()[3],
+      settings.hostidRef()[4],
+      settings.hostidRef()[5]);
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Reprogram idprom");
@@ -194,12 +194,12 @@ void MenuView::sel(uint8_t usbkSelector) {
           WAIT_VIEW.open("Reprogramming...");
 
           unsigned hostid24 =
-            decodeHex(settings.hostid()[0]) << 20
-            | decodeHex(settings.hostid()[1]) << 16
-            | decodeHex(settings.hostid()[2]) << 12
-            | decodeHex(settings.hostid()[3]) << 8
-            | decodeHex(settings.hostid()[4]) << 4
-            | decodeHex(settings.hostid()[5]);
+            decodeHex(settings.hostidRef()[0]) << 20
+            | decodeHex(settings.hostidRef()[1]) << 16
+            | decodeHex(settings.hostidRef()[2]) << 12
+            | decodeHex(settings.hostidRef()[3]) << 8
+            | decodeHex(settings.hostidRef()[4]) << 4
+            | decodeHex(settings.hostidRef()[5]);
 
           unsigned i = 0;
           // https://funny.computer.daz.cat/sun/nvram-hostid-faq.txt

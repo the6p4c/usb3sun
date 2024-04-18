@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 
 #include "hal.h"
 #include "mutex.h"
@@ -44,7 +45,15 @@ extern usb3sun_mutex settingsMutex;
 
 SETTING_ENUM(ForceClick, NO, OFF, ON);
 SETTING_ENUM(MouseBaud, S1200, S2400, S4800, S9600);
-using Hostid = unsigned char[6];
+struct Hostid {
+  unsigned char value[6];
+  inline bool operator==(const Hostid &other) const {
+    return !memcmp(value, other.value, sizeof value);
+  }
+  inline bool operator!=(const Hostid &other) const {
+    return !(*this == other);
+  }
+};
 struct Settings {
   SETTING(clickDuration, 1, unsigned long, 5uL); // [0,100]
   SETTING(forceClick, 1, ForceClick, {ForceClick::_::NO});
@@ -73,6 +82,13 @@ struct Settings {
         return 9600;
     }
     return 0;
+  }
+
+  const unsigned char *hostidRef() const {
+    return hostid_field.value.value;
+  }
+  unsigned char *hostidMut() {
+    return hostid_field.value.value;
   }
 
   static void begin();
