@@ -10,6 +10,9 @@ void Settings::begin() {
 }
 
 void Settings::readAll() {
+#ifdef WIPE_SETTINGS
+  usb3sun_fs_wipe();
+#endif
   read(settings.clickDuration_field);
   read(settings.forceClick_field);
   read(settings.mouseBaud_field);

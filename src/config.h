@@ -55,6 +55,7 @@
 
 // -DSUNK_ENABLE in platformio.ini to enable sun keyboard interface
 // -DSUNM_ENABLE in platformio.ini to enable sun mouse interface
+// -DWIPE_SETTINGS in platformio.ini to wipe settings on every boot
 
 #if defined(DEBUG_LOGGING)
 #define Sprint(...) do { pinout.debugPrint(__VA_ARGS__); } while (0)
