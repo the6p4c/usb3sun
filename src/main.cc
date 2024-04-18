@@ -506,6 +506,11 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 
       state.lastButtons = mreport->buttons;
     } break;
+    default: {
+#ifdef UHID_VERBOSE
+      Sprintln();
+#endif
+    } break;
   }
 out:
   // continue to request to receive report
