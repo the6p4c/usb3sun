@@ -14,6 +14,9 @@
     static constexpr const char *const path = "/" #_name; \
     unsigned version = currentVersion; \
     _type value = __VA_ARGS__; \
+    inline bool operator==(const _name##Setting &other) const { \
+      return this->value == other.value; \
+    } \
   } _name##_field; \
   _type &_name() { \
     return _name##_field.value; \
@@ -24,6 +27,9 @@ struct _name { \
   typedef enum class State: int { __VA_ARGS__, VALUE_COUNT } _; \
   State current; \
   operator State&() { return current; } \
+  inline bool operator==(const _name &other) const { \
+    return this->current == other.current; \
+  } \
   State& operator++() { \
     current = static_cast<State>(std::max(0, std::min(static_cast<int>(_::VALUE_COUNT) - 1, static_cast<int>(current) + 1))); \
     return current; \
@@ -44,6 +50,16 @@ struct Settings {
   SETTING(forceClick, 1, ForceClick, {ForceClick::_::NO});
   SETTING(mouseBaud, 1, MouseBaud, {MouseBaud::_::S9600});
   SETTING(hostid, 1, Hostid, {'0', '0', '0', '0', '0', '0'});
+
+  inline bool operator==(const Settings &other) const {
+    return this->clickDuration_field == other.clickDuration_field
+      && this->forceClick_field == other.forceClick_field
+      && this->mouseBaud_field == other.mouseBaud_field
+      && this->hostid_field == other.hostid_field;
+  }
+  inline bool operator!=(const Settings& other) const {
+    return !(*this == other);
+  }
 
   uint32_t mouseBaudReal() {
     switch (mouseBaud()) {
