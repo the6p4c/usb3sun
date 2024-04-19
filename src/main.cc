@@ -63,6 +63,7 @@ void drawStatus(int16_t x, int16_t y, const char *label, bool on);
 
 struct DefaultView : View {
   void handlePaint() override {
+    usb3sun_display_text(0, 0, false, USB3SUN_VERSION);
     drawStatus(78, 0, "CLK", state.clickEnabled);
     drawStatus(104, 0, "BEL", state.bell);
     drawStatus(0, 18, "CAP", state.caps);
@@ -175,11 +176,6 @@ void drawStatus(int16_t x, int16_t y, const char *label, bool on) {
 void loop() {
   const auto t = usb3sun_micros();
   usb3sun_display_clear();
-  // display.drawXBitmap(0, 0, logo_bits, 64, 16, SSD1306_WHITE);
-  usb3sun_display_text(0, 0, false, USB3SUN_VERSION);
-  // static int i = 0;
-  // display.printf("#%d @%lu", i++, t / 1'000);
-  // display.printf("usb3sun%c", t / 500'000 % 2 == 1 ? '.' : ' ');
   View::paint();
   usb3sun_display_flush();
 
