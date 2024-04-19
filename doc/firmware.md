@@ -15,6 +15,8 @@ firmware
 → makes arduino-pico debug logging configurable at runtime
 5. `git -C ~/.platformio/packages/framework-arduinopico apply $PWD/debug3.patch` ([debug3.patch](../debug3.patch))\
 → makes TinyUSB debug logging configurable at runtime
+6. (if using Nix) `nix-shell`
+7. `pio run -e pico`
 
 ### linux users
 
