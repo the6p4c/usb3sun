@@ -91,7 +91,7 @@ void Pinout::begin() {
   usb3sun_i2c_set_pinout(DISPLAY_SCL, DISPLAY_SDA);
 
 #if defined(WAIT_PIN)
-  pinMode(WAIT_PIN, INPUT_PULLUP);
+  usb3sun_gpio_set_as_input_pullup(WAIT_PIN);
 #endif
 
   // check for pinout v2 (active high)

@@ -161,7 +161,7 @@ void setup() {
   while (usb3sun_gpio_read(WAIT_PIN));
 #endif
 #ifdef WAIT_SERIAL
-  while (Serial.read() == -1);
+  while (usb3sun_debug_cdc_read() == -1);
 #endif
   waiting = false;
 
@@ -187,7 +187,7 @@ void loop() {
 #endif
 
   int input;
-  while ((input = usb3sun_debug_read()) != -1) {
+  while ((input = usb3sun_debug_uart_read()) != -1) {
     handleCliInput(input);
   }
 
@@ -300,7 +300,7 @@ void loop1() {
 #ifdef UHID_VERBOSE
       Sprintf("hid [%zu]: usb [%u:%u]: set led report %02Xh\n", i, dev_addr, instance, hid[i].led.report);
 #endif
-      tuh_hid_set_report(dev_addr, instance, report_id, HID_REPORT_TYPE_OUTPUT, &hid[i].led.report, sizeof(hid[i].led.report));
+      usb3sun_uhid_set_led_report(dev_addr, instance, report_id, hid[i].led.report);
 #else
       (void) dev_addr;
       (void) instance;
@@ -1331,7 +1331,7 @@ int main(int argc, char **argv) {
         static uint64_t tLastEsc = usb3sun_micros();
         bool hadInput = false;
         int input;
-        while ((input = usb3sun_debug_read()) != -1) {
+        while ((input = usb3sun_debug_uart_read()) != -1) {
           handleDemoInput(static_cast<uint8_t>(input), termiosOrig);
           hadInput = true;
           prev = input;

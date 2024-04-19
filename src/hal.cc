@@ -260,14 +260,22 @@ size_t usb3sun_uhid_parse_report_descriptor(usb3sun_hid_report_info *result, siz
   return tuh_result_len;
 }
 
+bool usb3sun_uhid_set_led_report(uint8_t dev_addr, uint8_t instance, uint8_t report_id, uint8_t &led_report) {
+  return tuh_hid_set_report(dev_addr, instance, report_id, HID_REPORT_TYPE_OUTPUT, &led_report, sizeof led_report);
+}
+
 void usb3sun_debug_init(int (*printf)(const char *format, ...)) {
 #if defined(DEBUG_LOGGING)
   DEBUG_RP2040_PRINTF = printf;
 #endif
 }
 
-int usb3sun_debug_read(void) {
+int usb3sun_debug_uart_read(void) {
   return pinout.debugUart ? pinout.debugUart->read() : -1;
+}
+
+int usb3sun_debug_cdc_read(void) {
+  return pinout.debugCdc ? pinout.debugCdc->read() : -1;
 }
 
 bool usb3sun_debug_write(const char *data, size_t len) {
@@ -697,9 +705,24 @@ size_t usb3sun_uhid_parse_report_descriptor(usb3sun_hid_report_info *result, siz
   return mock_uhid_report_infos.size();
 }
 
+bool usb3sun_uhid_set_led_report(uint8_t dev_addr, uint8_t instance, uint8_t report_id, uint8_t &led_report) {
+  return false;
+}
+
 void usb3sun_debug_init(int (*printf)(const char *format, ...)) {}
 
-int usb3sun_debug_read(void) {
+int usb3sun_debug_uart_read(void) {
+  if (fcntl(0, F_SETFL, O_NONBLOCK) == 0) {
+    uint8_t result;
+    if (read(0, &result, sizeof result) == sizeof result) {
+      return result;
+    }
+  }
+  return -1;
+}
+
+int usb3sun_debug_cdc_read(void) {
+  // TODO: same as debug uart read in this hal, is that ok?
   if (fcntl(0, F_SETFL, O_NONBLOCK) == 0) {
     uint8_t result;
     if (read(0, &result, sizeof result) == sizeof result) {
