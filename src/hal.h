@@ -162,6 +162,10 @@ void usb3sun_display_clear(void);
 void usb3sun_display_rect(
     int16_t x, int16_t y, int16_t w, int16_t h,
     int16_t border_radius, bool inverted, bool filled);
+// every > 1 yields dotted lines (extension to Adafruit GFX Library).
+void usb3sun_display_hline(int16_t x, int16_t y, int16_t w, bool inverted, int16_t every = 1);
+// every > 1 yields dotted lines (extension to Adafruit GFX Library).
+void usb3sun_display_vline(int16_t x, int16_t y, int16_t h, bool inverted, int16_t every = 1);
 void usb3sun_display_text(int16_t x, int16_t y, bool inverted, const char *text);
 
 }

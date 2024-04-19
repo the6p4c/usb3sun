@@ -890,6 +890,32 @@ void usb3sun_display_rect(
 
 #endif
 
+void usb3sun_display_hline(int16_t x0, int16_t y, int16_t w, bool inverted, int16_t every) {
+  size_t x1 = x0 + w - 1;
+  if (every > 1) {
+    draw_dot(x0, y, inverted);
+    draw_dot(x1, y, inverted);
+  } else if (every < 1) {
+    every = 1;
+  }
+  for (size_t x = x0; x <= x1; x += every) {
+    draw_dot(x, y, inverted);
+  }
+}
+
+void usb3sun_display_vline(int16_t x, int16_t y0, int16_t h, bool inverted, int16_t every) {
+  size_t y1 = y0 + h - 1;
+  if (every > 1) {
+    draw_dot(x, y0, inverted);
+    draw_dot(x, y1, inverted);
+  } else if (every < 1) {
+    every = 1;
+  }
+  for (size_t y = y0; y <= y1; y += every) {
+    draw_dot(x, y, inverted);
+  }
+}
+
 void usb3sun_display_text(int16_t x0, int16_t y0, bool inverted, const char *text) {
   constexpr size_t advance = 6;
   constexpr size_t glyph_width = 5;
