@@ -9,7 +9,7 @@
 #include "mutex.h"
 #include "pinout.h"
 
-#define SETTING(_name, _version, _type, ...) \
+#define SETTING_WRAPPER_TYPE(_name, _version, _type, ...) \
   struct _name##Setting { \
     static const unsigned currentVersion = _version; \
     static constexpr const char *const path = "/" #_name; \
@@ -18,7 +18,10 @@
     inline bool operator==(const _name##Setting &other) const { \
       return this->value == other.value; \
     } \
-  } _name##_field; \
+  };
+
+#define SETTING_WRAPPER_FIELD(_name, _type) \
+  struct _name##Setting _name##_field; \
   _type &_name() { \
     return _name##_field.value; \
   }
@@ -54,11 +57,15 @@ struct Hostid {
     return !(*this == other);
   }
 };
+SETTING_WRAPPER_TYPE(clickDuration, 1, unsigned long, 5uL); // [0,100]
+SETTING_WRAPPER_TYPE(forceClick, 1, ForceClick, {ForceClick::_::NO});
+SETTING_WRAPPER_TYPE(mouseBaud, 1, MouseBaud, {MouseBaud::_::S9600});
+SETTING_WRAPPER_TYPE(hostid, 1, Hostid, {'0', '0', '0', '0', '0', '0'});
 struct Settings {
-  SETTING(clickDuration, 1, unsigned long, 5uL); // [0,100]
-  SETTING(forceClick, 1, ForceClick, {ForceClick::_::NO});
-  SETTING(mouseBaud, 1, MouseBaud, {MouseBaud::_::S9600});
-  SETTING(hostid, 1, Hostid, {'0', '0', '0', '0', '0', '0'});
+  SETTING_WRAPPER_FIELD(clickDuration, unsigned long);
+  SETTING_WRAPPER_FIELD(forceClick, ForceClick);
+  SETTING_WRAPPER_FIELD(mouseBaud, MouseBaud);
+  SETTING_WRAPPER_FIELD(hostid, Hostid);
 
   inline bool operator==(const Settings &other) const {
     return this->clickDuration_field == other.clickDuration_field
