@@ -187,10 +187,10 @@ usb3sun has been tested successfully with
 
 usb3sun is not yet compatible with
 
-- 05AC:024F Apple Magic **Keyboard** with Numeric Keypad (model A1243)
-- 1209:2303 Atreus (Keyboardio version) **keyboard** with Kaleidoscope
-- 3367:1903 Endgame Gear XM1r **mouse** — buttons only (16-bit dx/dy, no boot protocol)
-- 045E:0039 Microsoft Intelli**Mouse** Optical 1.1A — broken (“Control FAILED”)
+- [#4](https://github.com/delan/usb3sun/issues/4) — 05AC:024F Apple Magic **Keyboard** with Numeric Keypad (model A1243)
+- [#5](https://github.com/delan/usb3sun/issues/5) — 1209:2303 Atreus (Keyboardio version) **keyboard** with Kaleidoscope
+- [#6](https://github.com/delan/usb3sun/issues/6) — 3367:1903 Endgame Gear XM1r **mouse** — buttons only (16-bit dx/dy, no boot protocol)
+- [#7](https://github.com/delan/usb3sun/issues/7) — 045E:0039 Microsoft Intelli**Mouse** Optical 1.1A — broken (“Control FAILED”)
 
 ## design files
 
@@ -225,3 +225,11 @@ usb3sun is not yet compatible with
 | VSUN | -0V3 to 6V0 |
 | I<sub>VBUS1</sub> | up to 500mA |
 | I<sub>VBUS2</sub> | up to 500mA |
+
+## errata
+
+[#2](https://github.com/delan/usb3sun/issues/2) (fixed in rev B0+) — in **rev A0**, **rev A1**, **rev A2**, and **rev A3**, resetting the adapter will make the workstation drop you into an ok prompt, because the initial state of the adapter after reset is a serial “break” on the sun keyboard tx line. this may cause the software on your workstation to behave unpredictably after typing “go” to continue. for example, solaris 2.5.1 often panics here if booted over nfs.
+
+[#11](https://github.com/delan/usb3sun/issues/11) (fixed in rev B0+) — in **rev A0**, **rev A1**, **rev A2**, and **rev A3**, resetting the adapter may cause the adapter to hang until power cycled, because the display module can’t be reset and may start to malfunction. this is relatively rare, but also fairly easy to reproduce if you mash the reset button several times in quick succession.
+
+[#14](https://github.com/delan/usb3sun/issues/14) (workaround available in firmware 2.0+) — in **all firmware versions**, some usb devices may start to malfunction after saving settings, because we need to pause the whole adapter (including the usb host) while we write to flash. for example, with the Microsoft Wheel Mouse Optical 1.1A (045E:0040), saving settings may make the red led go dim and make the mouse start spewing updates until disconnected. to work around this issue (firmware 2.0+), hold **Shift** while pressing **Enter** to reboot the adapter after saving settings.
