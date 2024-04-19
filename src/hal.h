@@ -44,6 +44,7 @@ typedef struct {
     struct BuzzerStartOp { static const uint64_t id = 1 << 9; uint32_t pitch; };
     struct FsReadOp { static const uint64_t id = 1 << 10; std::string path; size_t expected_len; std::optional<std::vector<uint8_t>> data; };
     struct FsWriteOp { static const uint64_t id = 1 << 11; std::string path; std::vector<uint8_t> data; };
+    struct RebootOp { static const uint64_t id = 1 << 12; };
     using Op = std::variant<
       PinoutV2Op,
       SunkInitOp,
@@ -56,7 +57,8 @@ typedef struct {
       UhidRequestReportOp,
       BuzzerStartOp,
       FsReadOp,
-      FsWriteOp>;
+      FsWriteOp,
+      RebootOp>;
     struct Entry {
       uint64_t micros;
       Op op;
@@ -87,6 +89,7 @@ typedef struct {
     DERIVE_OP(BuzzerStartOp, p.pitch == q.pitch, "buzzer_start " << o.pitch);
     DERIVE_OP(FsReadOp, p.path == q.path && p.expected_len == q.expected_len && p.data == q.data, "fs_read " << o.path << " " << o.expected_len << " " << o.data);
     DERIVE_OP(FsWriteOp, p.path == q.path && p.data == q.data, "fs_write " << o.path << " " << o.data);
+    DERIVE_OP(RebootOp, true, "reboot");
     void usb3sun_test_init(uint64_t history_filter_mask);
     void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);
     void usb3sun_mock_sunk_read(const char *data, size_t len);

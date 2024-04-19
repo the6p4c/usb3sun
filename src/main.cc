@@ -984,7 +984,7 @@ static bool run_test(const char *test_name) {
   };
 
   if (!strcmp(test_name, "menu_settings")) {
-    usb3sun_test_init(FsWriteOp::id | SunmInitOp::id);
+    usb3sun_test_init(FsWriteOp::id | SunmInitOp::id | RebootOp::id);
     setup();
     if (!assert_then_clear_test_history(std::vector<Op> {
 #ifdef SUNM_ENABLE
@@ -1115,6 +1115,29 @@ static bool run_test(const char *test_name) {
 #ifdef SUNM_ENABLE
       SunmInitOp {4800},
 #endif
+    })) return false;
+
+    // when saving settings, we should reboot if requested.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::ForceClick);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Force click: on
+    findMenuItem(USBK_DOWN, MenuItem::ClickDuration);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Click duration: 15 ms
+    findMenuItem(USBK_DOWN, MenuItem::MouseBaud);
+    View::sendMakeBreak({}, USBK_LEFT); // → Mouse baud: 2400
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW);
+    View::sendMakeBreak(USBK_SHIFT_L, USBK_ENTER); // save settings
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW);
+    TEST_ASSERT_EQ(settings.forceClick.current, ForceClick::_::ON);
+    TEST_ASSERT_EQ(settings.clickDuration, 15);
+    TEST_ASSERT_EQ(settings.mouseBaudReal(), 2400);
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      FsWriteOp {"/clickDuration.v2", bytes(8, "\x0F\x00\x00\x00\x00\x00\x00\x00")},
+      FsWriteOp {"/forceClick.v2", bytes(4, "\x02\x00\x00\x00")},
+      FsWriteOp {"/mouseBaud.v2", bytes(4, "\x01\x00\x00\x00")},
+      RebootOp {},
     })) return false;
 
     return true;

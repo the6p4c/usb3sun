@@ -51,7 +51,14 @@
 #define USBK_X 0x1B
 #define USBK_Y 0x1C
 #define USBK_Z 0x1D
+#define USBK_CTRL_L ((uint8_t) (1u << 0))
 #define USBK_CTRL_R ((uint8_t) (1u << 4))
+#define USBK_SHIFT_L ((uint8_t) (1u << 1))
+#define USBK_SHIFT_R ((uint8_t) (1u << 5))
+#define USBK_ALT_L ((uint8_t) (1u << 2))
+#define USBK_ALT_R ((uint8_t) (1u << 6))
+#define USBK_GUI_L ((uint8_t) (1u << 3))
+#define USBK_GUI_R ((uint8_t) (1u << 7))
 #define USBM_LEFT ((uint8_t) (1u << 0))
 #define USBM_RIGHT ((uint8_t) (1u << 1))
 #define USBM_MIDDLE ((uint8_t) (1u << 2))

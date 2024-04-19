@@ -755,6 +755,7 @@ bool usb3sun_fifo_pop(uint32_t *result) {
 }
 
 void usb3sun_reboot(void) {
+  push_history(RebootOp {});
   if (exit_on_reboot) {
     usb3sun_test_terminal_demo_mode(false);
     exit(0);

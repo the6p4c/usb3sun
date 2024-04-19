@@ -312,7 +312,11 @@ void SaveSettingsView::handleKey(const UsbkChanges &changes) {
       switch (changes.sel[i].usbkSelector) {
         case USBK_RETURN:
         case USBK_ENTER: {
+          bool doReboot = false;
           bool doRestartSunm = false;
+          if (!!(changes.kreport.modifier & (USBK_SHIFT_L | USBK_SHIFT_R))) {
+            doReboot = true;
+          }
           if (newSettings.clickDuration != settings.clickDuration) {
             settings.clickDuration = newSettings.clickDuration;
             settings.write<ClickDurationV2>(settings.clickDuration);
@@ -330,7 +334,9 @@ void SaveSettingsView::handleKey(const UsbkChanges &changes) {
             settings.hostid = newSettings.hostid;
             settings.write<HostidV2>(settings.hostid);
           }
-          if (doRestartSunm) {
+          if (doReboot) {
+            usb3sun_reboot();
+          } else if (doRestartSunm) {
             pinout.restartSunm();
           }
           close();
