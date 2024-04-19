@@ -248,8 +248,6 @@ void MenuView::sel(uint8_t usbkSelector) {
           WAIT_VIEW.close();
           close();
         } break;
-        default:
-          close();
       }
       break;
     case USBK_DOWN:
