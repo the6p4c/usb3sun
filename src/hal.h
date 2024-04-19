@@ -29,6 +29,7 @@ typedef struct {
 
   extern "C++" {
     #include <iostream>
+    #include <optional>
     #include <variant>
     #include <vector>
     struct PinoutV2Op { static const uint64_t id = 1 << 0; };
@@ -41,6 +42,8 @@ typedef struct {
     struct GpioWriteOp { static const uint64_t id = 1 << 7; usb3sun_pin pin; bool value; };
     struct UhidRequestReportOp { static const uint64_t id = 1 << 8; uint8_t dev_addr, instance; };
     struct BuzzerStartOp { static const uint64_t id = 1 << 9; uint32_t pitch; };
+    struct FsReadOp { static const uint64_t id = 1 << 10; std::string path; size_t expected_len; std::optional<std::vector<uint8_t>> data; };
+    struct FsWriteOp { static const uint64_t id = 1 << 11; std::string path; std::vector<uint8_t> data; };
     using Op = std::variant<
       PinoutV2Op,
       SunkInitOp,
@@ -51,7 +54,9 @@ typedef struct {
       GpioReadOp,
       GpioWriteOp,
       UhidRequestReportOp,
-      BuzzerStartOp>;
+      BuzzerStartOp,
+      FsReadOp,
+      FsWriteOp>;
     struct Entry {
       uint64_t micros;
       Op op;
@@ -66,6 +71,8 @@ typedef struct {
     bool operator==(const GpioWriteOp &p, const GpioWriteOp &q);
     bool operator==(const UhidRequestReportOp &p, const UhidRequestReportOp &q);
     bool operator==(const BuzzerStartOp &p, const BuzzerStartOp &q);
+    bool operator==(const FsReadOp &p, const FsReadOp &q);
+    bool operator==(const FsWriteOp &p, const FsWriteOp &q);
     bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q);
     bool operator!=(const SunkInitOp &p, const SunkInitOp &q);
     bool operator!=(const SunkReadOp &p, const SunkReadOp &q);
@@ -76,6 +83,8 @@ typedef struct {
     bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q);
     bool operator!=(const UhidRequestReportOp &p, const UhidRequestReportOp &q);
     bool operator!=(const BuzzerStartOp &p, const BuzzerStartOp &q);
+    bool operator!=(const FsReadOp &p, const FsReadOp &q);
+    bool operator!=(const FsWriteOp &p, const FsWriteOp &q);
     std::ostream &operator<<(std::ostream &s, const PinoutV2Op &o);
     std::ostream &operator<<(std::ostream &s, const SunkInitOp &o);
     std::ostream &operator<<(std::ostream &s, const SunkReadOp &o);
@@ -88,6 +97,8 @@ typedef struct {
     std::ostream &operator<<(std::ostream &s, const Op &o);
     std::ostream &operator<<(std::ostream &s, const Entry &v);
     std::ostream &operator<<(std::ostream &s, const BuzzerStartOp &v);
+    std::ostream &operator<<(std::ostream &s, const FsReadOp &v);
+    std::ostream &operator<<(std::ostream &s, const FsWriteOp &v);
     void usb3sun_test_init(uint64_t history_filter_mask);
     void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);
     void usb3sun_mock_sunk_read(const char *data, size_t len);
