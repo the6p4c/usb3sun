@@ -36,10 +36,10 @@ const uint16_t ASCII_TO_USBK[128] = {
     /* 48h */ 0, 0, 0, 0, 0, 0, 0, 0,
     /* 50h */ 0, 0, 0, 0, 0, 0, 0, 0,
     /* 58h */ 0, 0, 0, 0, 0, 0, 0, 0,
-    /* 60h */ 0, USBK_A, USBK_B, USBK_C, USBK_D, USBK_E, USBK_F, 0,
-    /* 68h */ 0, 0, 0, 0, 0, 0, 0, 0,
-    /* 70h */ 0, 0, 0, 0, 0, 0, 0, 0,
-    /* 78h */ 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 60h */ 0, USBK_A, USBK_B, USBK_C, USBK_D, USBK_E, USBK_F, USBK_G,
+    /* 68h */ USBK_H, USBK_I, USBK_J, USBK_K, USBK_L, USBK_M, USBK_N, USBK_O,
+    /* 70h */ USBK_P, USBK_Q, USBK_R, USBK_S, USBK_T, USBK_U, USBK_V, USBK_W,
+    /* 78h */ USBK_X, USBK_Y, USBK_Z, 0, 0, 0, 0, 0,
 };
 
 #endif

@@ -31,6 +31,26 @@
 #define USBK_D 0x07
 #define USBK_E 0x08
 #define USBK_F 0x09
+#define USBK_G 0x0A
+#define USBK_H 0x0B
+#define USBK_I 0x0C
+#define USBK_J 0x0D
+#define USBK_K 0x0E
+#define USBK_L 0x0F
+#define USBK_M 0x10
+#define USBK_N 0x11
+#define USBK_O 0x12
+#define USBK_P 0x13
+#define USBK_Q 0x14
+#define USBK_R 0x15
+#define USBK_S 0x16
+#define USBK_T 0x17
+#define USBK_U 0x18
+#define USBK_V 0x19
+#define USBK_W 0x1A
+#define USBK_X 0x1B
+#define USBK_Y 0x1C
+#define USBK_Z 0x1D
 #define USBK_CTRL_R ((uint8_t) (1u << 4))
 #define USBM_LEFT ((uint8_t) (1u << 0))
 #define USBM_RIGHT ((uint8_t) (1u << 1))
