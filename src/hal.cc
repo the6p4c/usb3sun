@@ -916,17 +916,21 @@ void usb3sun_display_vline(int16_t x, int16_t y0, int16_t h, bool inverted, int1
   }
 }
 
-void usb3sun_display_text(int16_t x0, int16_t y0, bool inverted, const char *text) {
+void usb3sun_display_text(int16_t x0, int16_t y0, bool inverted, const char *text, bool opaque) {
   constexpr size_t advance = 6;
   constexpr size_t glyph_width = 5;
   constexpr size_t glyph_height = 8;
   for (; *text != '\0'; text += 1) {
     uint8_t i = *text;
-    for (int16_t x = x0; x < x0 + glyph_width; x++) {
-      uint8_t line = adafruit_gfx_classic[i * glyph_width + (x - x0)];
-      for (int16_t y = y0; y < y0 + glyph_height; y++, line >>= 1) {
-        if (!!(line & 1)) {
-          draw_dot(x, y, inverted);
+    if (i != (uint8_t)'\xFF') {
+      for (int16_t x = x0; x < x0 + glyph_width; x++) {
+        uint8_t line = adafruit_gfx_classic[i * glyph_width + (x - x0)];
+        for (int16_t y = y0; y < y0 + glyph_height; y++, line >>= 1) {
+          if (!!(line & 1)) {
+            draw_dot(x, y, inverted);
+          } else if (opaque) {
+            draw_dot(x, y, !inverted);
+          }
         }
       }
     }

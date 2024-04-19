@@ -166,7 +166,10 @@ void usb3sun_display_rect(
 void usb3sun_display_hline(int16_t x, int16_t y, int16_t w, bool inverted, int16_t every = 1);
 // every > 1 yields dotted lines (extension to Adafruit GFX Library).
 void usb3sun_display_vline(int16_t x, int16_t y, int16_t h, bool inverted, int16_t every = 1);
-void usb3sun_display_text(int16_t x, int16_t y, bool inverted, const char *text);
+// based on Adafruit GFX library with default “classic” font in cp437-correct mode, plus extensions:
+// - no background is painted by default, unless you pass opaque = true
+// - the byte FFh yields a space with no background, even if opaque = true
+void usb3sun_display_text(int16_t x, int16_t y, bool inverted, const char *text, bool opaque = false);
 
 }
 
