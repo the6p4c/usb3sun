@@ -9,21 +9,21 @@
 #include "mutex.h"
 #include "pinout.h"
 
-#define SETTING_WRAPPER_TYPE(_name, _version, _type, ...) \
-  struct _name##Setting { \
-    static const unsigned currentVersion = _version; \
-    static constexpr const char *const path = "/" #_name; \
+#define SETTING_V1_WRAPPER_TYPE(_wrapper_name, _file_name, _payload_type, ...) \
+  struct _wrapper_name { \
+    static const unsigned currentVersion = 1; \
+    static constexpr const char *const path = "/" _file_name; \
     unsigned version = currentVersion; \
-    _type value = __VA_ARGS__; \
-    inline bool operator==(const _name##Setting &other) const { \
+    _payload_type value = __VA_ARGS__; \
+    inline bool operator==(const _wrapper_name &other) const { \
       return this->value == other.value; \
     } \
   };
 
-#define SETTING_WRAPPER_FIELD(_name, _type) \
-  struct _name##Setting _name##_field; \
-  _type &_name() { \
-    return _name##_field.value; \
+#define SETTING_V1_WRAPPER_FIELD(_wrapper_name, _field_name, _payload_type) \
+  _wrapper_name _field_name##_field; \
+  _payload_type &_field_name() { \
+    return _field_name##_field.value; \
   }
 
 #define SETTING_ENUM(_name, ...) \
@@ -57,15 +57,15 @@ struct Hostid {
     return !(*this == other);
   }
 };
-SETTING_WRAPPER_TYPE(clickDuration, 1, unsigned long, 5uL); // [0,100]
-SETTING_WRAPPER_TYPE(forceClick, 1, ForceClick, {ForceClick::_::NO});
-SETTING_WRAPPER_TYPE(mouseBaud, 1, MouseBaud, {MouseBaud::_::S9600});
-SETTING_WRAPPER_TYPE(hostid, 1, Hostid, {'0', '0', '0', '0', '0', '0'});
+SETTING_V1_WRAPPER_TYPE(ClickDurationV1, "clickDuration", unsigned long, 5uL); // [0,100]
+SETTING_V1_WRAPPER_TYPE(ForceClickV1, "forceClick", ForceClick, {ForceClick::_::NO});
+SETTING_V1_WRAPPER_TYPE(MouseBaudV1, "mouseBaud", MouseBaud, {MouseBaud::_::S9600});
+SETTING_V1_WRAPPER_TYPE(HostidV1, "hostid", Hostid, {'0', '0', '0', '0', '0', '0'});
 struct Settings {
-  SETTING_WRAPPER_FIELD(clickDuration, unsigned long);
-  SETTING_WRAPPER_FIELD(forceClick, ForceClick);
-  SETTING_WRAPPER_FIELD(mouseBaud, MouseBaud);
-  SETTING_WRAPPER_FIELD(hostid, Hostid);
+  SETTING_V1_WRAPPER_FIELD(ClickDurationV1, clickDuration, unsigned long);
+  SETTING_V1_WRAPPER_FIELD(ForceClickV1, forceClick, ForceClick);
+  SETTING_V1_WRAPPER_FIELD(MouseBaudV1, mouseBaud, MouseBaud);
+  SETTING_V1_WRAPPER_FIELD(HostidV1, hostid, Hostid);
 
   inline bool operator==(const Settings &other) const {
     return this->clickDuration_field == other.clickDuration_field
@@ -100,37 +100,37 @@ struct Settings {
 
   static void begin();
   void readAll();
-  template <typename T> void read(T& setting);
-  template <typename T> void write(const T& setting);
+  template <typename SettingV1> void readV1(SettingV1& setting);
+  template <typename Setting> void write(const Setting& setting);
 };
 
 extern Settings settings;
 
-template <typename T>
-void Settings::read(T& setting) {
+template <typename SettingV1>
+void Settings::readV1(SettingV1& setting) {
   MutexGuard m{&settingsMutex};
-  T result{};
-  if (usb3sun_fs_read(T::path, reinterpret_cast<char *>(&result), sizeof result)) {
-    if (result.version == T::currentVersion) {
-      Sprintf("settings: read %s: version %u\n", T::path, T::currentVersion);
+  SettingV1 result{};
+  if (usb3sun_fs_read(SettingV1::path, reinterpret_cast<char *>(&result), sizeof result)) {
+    if (result.version == SettingV1::currentVersion) {
+      Sprintf("settings: read %s: version %u\n", SettingV1::path, SettingV1::currentVersion);
       setting = result;
       return;
     } else {
-      Sprintf("settings: read %s: wrong version\n", T::path);
+      Sprintf("settings: read %s: wrong version\n", SettingV1::path);
     }
   } else {
-    Sprintf("settings: read %s: file not found\n", T::path);
+    Sprintf("settings: read %s: file not found\n", SettingV1::path);
   }
-  setting = T{};
+  setting = SettingV1{};
 }
 
-template <typename T>
-void Settings::write(const T& setting) {
+template <typename Setting>
+void Settings::write(const Setting& setting) {
   MutexGuard m{&settingsMutex};
-  if (usb3sun_fs_write(T::path, reinterpret_cast<const char *>(&setting), sizeof setting)) {
-    Sprintf("settings: write %s: version %u\n", T::path, T::currentVersion);
+  if (usb3sun_fs_write(Setting::path, reinterpret_cast<const char *>(&setting), sizeof setting)) {
+    Sprintf("settings: write %s: version %u\n", Setting::path, Setting::currentVersion);
   } else {
-    Sprintf("settings: write %s: failed\n", T::path);
+    Sprintf("settings: write %s: failed\n", Setting::path);
   }
 }
 
