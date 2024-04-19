@@ -141,6 +141,13 @@ void MenuView::handleKey(const UsbkChanges &changes) {
 
 void MenuView::sel(uint8_t usbkSelector) {
   switch (usbkSelector) {
+    case USBK_ESCAPE:
+      if (newSettings != settings) {
+        SAVE_SETTINGS_VIEW.open("");
+      } else {
+        close();
+      }
+      break;
     case USBK_RIGHT:
       switch (selectedItem) {
         case (size_t)MenuItem::ForceClick:
