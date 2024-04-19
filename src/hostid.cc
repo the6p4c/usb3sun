@@ -17,8 +17,11 @@ void HostidView::handlePaint() {
   usb3sun_display_text(8, 8, false, "Hostid:");
   usb3sun_display_text(8 + 6 * cursorIndex, 18, false, "_");
   usb3sun_display_text(8, 16, false, hostid_text);
-  usb3sun_display_text(60, 8, false, "ENTER: ok");
-  usb3sun_display_text(60, 16, false, "ESC: cancel");
+  usb3sun_display_vline(8 + 6 * 8 - 1, 0, 32, false, false);
+  usb3sun_display_hline(8 + 6 * 8 - 1 + 4, 8 + 6, 6 * 11 - 1, false, 3);
+  usb3sun_display_hline(8 + 6 * 8 - 1 + 4, 16 + 6, 6 * 11 - 1, false, 3);
+  usb3sun_display_text(8 + 6 * 8 - 1 + 4, 8, false, "ENTER\377\377\377\377ok", true);
+  usb3sun_display_text(8 + 6 * 8 - 1 + 4, 16, false, "ESC\377\377cancel", true);
 }
 
 void HostidView::handleKey(const UsbkChanges &changes) {
