@@ -74,7 +74,7 @@ static void drawMenuItem(int16_t &marqueeX, size_t i, bool on, const char *fmt, 
     label[sizeof label - 1] = '\0';
   }
 
-  int16_t y = 8 * (1 + i);
+  int16_t y = 8 * i;
   if (on) {
     int width = label_len * 6;
     usb3sun_display_rect(4, y, 120, 8, 0, false, true);
@@ -126,7 +126,7 @@ void MenuView::handlePaint() {
   if (marqueeTick == 0)
     marqueeX += 1;
 
-  for (size_t i = topItem; i <= topItem + 2 && i < MENU_ITEM_COUNT; i++)
+  for (size_t i = topItem; i <= topItem + 3 && i < MENU_ITEM_COUNT; i++)
     MENU_ITEM_PAINTERS[i](marqueeX, i - topItem, selectedItem == i);
 }
 
@@ -254,7 +254,7 @@ void MenuView::sel(uint8_t usbkSelector) {
         selectedItem += 1u;
         marqueeX = 0;
       }
-      if (selectedItem - topItem > 2u)
+      if (selectedItem - topItem > 3u)
         topItem += 1u;
       break;
     case USBK_UP:
