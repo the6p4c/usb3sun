@@ -352,6 +352,10 @@ bool usb3sun_fifo_pop(uint32_t *result) {
   return rp2040.fifo.pop_nb(result);
 }
 
+void usb3sun_reboot(void) {
+  rp2040.reboot();
+}
+
 uint64_t usb3sun_micros(void) {
   return micros();
 }
@@ -728,6 +732,11 @@ bool usb3sun_fifo_push(uint32_t value) {
 
 bool usb3sun_fifo_pop(uint32_t *result) {
   return false;
+}
+
+void usb3sun_reboot(void) {
+  // TODO reset termios ICANON | ECHO
+  exit(0);
 }
 
 uint64_t usb3sun_micros(void) {

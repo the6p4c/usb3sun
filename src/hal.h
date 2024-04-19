@@ -138,6 +138,7 @@ void usb3sun_mutex_unlock(usb3sun_mutex *mutex);
 bool usb3sun_fifo_push(uint32_t value);
 bool usb3sun_fifo_pop(uint32_t *result);
 
+void usb3sun_reboot(void);
 uint64_t usb3sun_micros(void);
 void usb3sun_sleep_micros(uint64_t micros);
 uint32_t usb3sun_clock_speed(void);
