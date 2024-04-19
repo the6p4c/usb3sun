@@ -65,13 +65,25 @@ usb3sun remembers its settings while powered off (firmware 1.2+).
 
 to open the settings menu, press **Right Ctrl+Space**. use the **Up** and **Down** arrow keys to select a setting, then use **Left** and **Right** to change settings listed as “in place”, or **Return** or **Enter** to choose other actions.
 
+to close the settings menu, press **Esc** (firmware 2.0+) or choose **Go back**.
+
+if there are no unsaved changes, or if you have an older firmware that saves changes immediately (firmware &lt;2.0), that’s all you need to do! if there are unsaved changes (firmware 2.0+), you will be asked if you want to save your changes:
+
+- press **Enter** to save your settings
+- press **N** to close without saving
+- press **Esc** to go back to the settings menu
+
+some usb devices may start to malfunction after saving settings, because we need to pause the whole adapter (including the usb host) while we write to flash. if you have an affected device, pressing **Shift+Enter** instead of **Enter** will reboot usb3sun (the adapter, not your workstation) after saving your settings. please report any affected devices in the github issue ([#14](https://github.com/delan/usb3sun/issues/14)).
+
 | setting | firmware | in place? | values |
 |-|-|-|-|
 | Go back | 1.0+ | no | closes the settings menu |
-| Force click | 1.2+ | yes | **no** = allow the workstation to control the click mode |
+| Force click | 1.2+ | yes | **no** (default) = allow the workstation to control the click mode |
 |  |  |  | **off** = never click when pressing keys |
 |  |  |  | **on** = always click when pressing keys |
-| Click duration | 1.0+ | yes | 0 ms, 5 ms, 10 ms, …, 100 ms |
+| Click duration | 1.0+ | yes | 0 ms, 5 ms (default), 10 ms, …, 100 ms |
+| Mouse baud | 2.0+ | yes | 1200, 2400, 4800, 9600 (default) |
+|  |  |  | lower baud rates may be required on **NeXTSTEP** and **Plan 9** |
 | Hostid | 1.5+ | no | sets the hostid used when reprogramming your idprom |
 | Reprogram idprom | 1.5+ | no | plays a macro that reprograms your idprom |
 | Wipe idprom (AAh) | 1.5+ | no | plays a macro that makes your idprom contents invalid |
