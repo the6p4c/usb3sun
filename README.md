@@ -99,6 +99,8 @@ release notes
 * [#10](https://github.com/delan/usb3sun/issues/10) — added support for logging over UART_TX/UART_RX **without disabling the sun keyboard interface**
     * this feature requires **pcb rev B0** or newer, due to the pinout changes required
     * please report any regressions with the **buzzer** or **sun mouse interface**; the buzzer had to be moved from pio to hardware pwm, and the sun mouse had to be moved from hardware uart to pio
+* [#14](https://github.com/delan/usb3sun/issues/14) — added workaround for usb devices that malfunction when saving settings
+    * if you have any affected devices, hold Shift while pressing Enter to reboot the adapter after saving settings
 * removed the splash screen from debug logging — this significantly slowed down the setup routine
 * removed the fake sun emulation feature — this wasn’t too useful, and was broken by the pinout changes
 * fixed a compile error when debug logging was enabled (PICOPROBE_ENABLE)
