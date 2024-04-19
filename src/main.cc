@@ -574,6 +574,7 @@ static std::vector<const char *> test_names = {
   "settings_read_too_short",
   "view_stack",
   "menu_settings",
+  "menu_hostid",
 };
 
 static void help() {
@@ -975,6 +976,80 @@ static bool run_test(const char *test_name) {
 #ifdef SUNM_ENABLE
       SunmInitOp {4800},
 #endif
+    })) return false;
+
+    return true;
+  }
+
+  if (!strcmp(test_name, "menu_hostid")) {
+    usb3sun_test_init(FsWriteOp::id);
+    setup();
+
+    // no confirm-save when hostid is changed but we say cancel.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::Hostid);
+    View::sendMakeBreak({}, USBK_RETURN); // Hostid: 000000
+    View::sendMakeBreak({}, USBK_1); // → 100000
+    View::sendMakeBreak({}, USBK_ESCAPE); // cancel
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // confirm-save when hostid is changed and we say ok,
+    // but no settings change or write if we say no.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::Hostid);
+    View::sendMakeBreak({}, USBK_RETURN); // Hostid: 000000
+    View::sendMakeBreak({}, USBK_1); // → 100000
+    View::sendMakeBreak({}, USBK_RETURN); // ok
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ESCAPE); // cancel
+    TEST_ASSERT_EQ(View::peek(), &MENU_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_N); // don't save
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // no confirm-save when hostid setting is changed and changed back.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::Hostid);
+    View::sendMakeBreak({}, USBK_RETURN); // Hostid: 000000
+    View::sendMakeBreak({}, USBK_1); // → 100000
+    View::sendMakeBreak({}, USBK_RETURN); // ok
+    View::sendMakeBreak({}, USBK_RETURN); // Hostid: 100000
+    View::sendMakeBreak({}, USBK_0); // → 000000
+    View::sendMakeBreak({}, USBK_RETURN); // ok
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // when the hostid setting is changed, the setting should change in memory,
+    // and we should issue a fs write for only the changed setting.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::Hostid);
+    View::sendMakeBreak({}, USBK_RETURN); // Hostid: 000000
+    View::sendMakeBreak({}, USBK_1); // → 100000
+    View::sendMakeBreak({}, USBK_RETURN); // ok
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ENTER); // save settings
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'1', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    const char *expected = "\x01\x00\x00\x00\x31\x30\x30\x30\x30\x30\x00\x00";
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      FsWriteOp {"/hostid", {expected, expected + 12}},
     })) return false;
 
     return true;
