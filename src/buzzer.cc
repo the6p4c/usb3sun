@@ -76,7 +76,7 @@ bool Buzzer::isExpired(unsigned long t, unsigned long duration) {
 
 void Buzzer::setCurrent(unsigned long t, Buzzer::State value) {
 #ifdef BUZZER_VERBOSE
-  Sprintf("buzzer: setCurrent %d\n", value);
+  Sprintf("buzzer: setCurrent %d\n", static_cast<int>(value));
 #endif
   current = value;
   since = t;
@@ -94,6 +94,7 @@ void Buzzer::update() {
 void Buzzer::click(std::optional<unsigned long> temporaryDuration) {
   MutexGuard m{&buzzerMutex};
   switch (settings.forceClick) {
+    default:
     case ForceClick::_::NO:
       if (!state.clickEnabled) return;
       break;

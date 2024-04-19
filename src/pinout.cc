@@ -17,8 +17,8 @@ static int vprintfDebug(const char *format, va_list ap) {
   va_end(ap1);
   if (requiredLen < 0) {
     return false;
-  } else if (requiredLen > sizeof result - 1) {
-    size_t len = requiredLen + 1;
+  } else if (static_cast<size_t>(requiredLen) > sizeof result - 1) {
+    size_t len = static_cast<size_t>(requiredLen) + 1;
     char *result = new char[len];
     if (!result) {
       return false;
@@ -34,7 +34,7 @@ static int vprintfDebug(const char *format, va_list ap) {
     delete[] result;
     return ok;
   }
-  return pinout.debugWrite(result, requiredLen);
+  return pinout.debugWrite(result, static_cast<size_t>(requiredLen));
 }
 
 static int printfDebug(const char *format, ...) {

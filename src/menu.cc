@@ -72,7 +72,7 @@ template<typename... Args>
 static void drawMenuItem(int16_t &marqueeX, size_t i, bool on, const char *fmt, Args... args) {
   char label[256];
   int label_len = snprintf(label, sizeof label, fmt, args...);
-  if (label_len >= sizeof label) {
+  if (static_cast<size_t>(label_len) >= sizeof label) {
     // truncate the text.
     label[sizeof label - 1] = '\0';
   }

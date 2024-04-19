@@ -58,7 +58,7 @@ void handleCliInput(char cur) {
       }
       goto end;
     } else {
-      Sprintf("\033[33m^[\033[0m", cur);
+      Sprintf("\033[33m^[\033[0m");
     }
   }
   if (cur >= ' ' && cur <= '~') {
@@ -84,12 +84,12 @@ void handleCliInput(char cur) {
       sunkSend("\n");
       break;
     case '\r': // enter in terminal (^M)
-      Sprintf("\n", cur);
+      Sprintf("\n");
       if (len > 0) {
         // split into words and count
         char *word = input;
         size_t wordCount = 1;
-        while (word - input < sizeof input && !!(word = strchr(word, ' '))) {
+        while (static_cast<size_t>(word - input) < sizeof input && !!(word = strchr(word, ' '))) {
           word++[0] = '\0';
           wordCount++;
         }

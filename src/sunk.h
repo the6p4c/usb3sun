@@ -42,21 +42,23 @@ void sunkSend(const char *fmt, Args... args) {
     Sprintf("sunk: macro buffer overflow");
     return;
   }
-  for (auto i = 0; i < len; i++) {
-    if (result[i] >= sizeof(ASCII_TO_SUNK) / sizeof(*ASCII_TO_SUNK) || ASCII_TO_SUNK[result[i]] == 0) {
-      Sprintf("sunk: octet %02Xh not in ASCII_TO_SUNK\n", result[i]);
+  for (size_t i = 0; i < len; i++) {
+    auto octet = static_cast<uint8_t>(result[i]);
+    if (octet >= sizeof(ASCII_TO_SUNK) / sizeof(*ASCII_TO_SUNK) || ASCII_TO_SUNK[octet] == 0) {
+      Sprintf("sunk: octet %02Xh not in ASCII_TO_SUNK\n", octet);
       return;
     }
   }
   Sprintf("sunk: sending macro <");
   Sprintf(fmt, args...);
   Sprintf(">\n");
-  for (auto i = 0; i < len; i++) {
-    if (!!(ASCII_TO_SUNK[result[i]] & SUNK_SEND_SHIFT))
+  for (size_t i = 0; i < len; i++) {
+    auto octet = static_cast<uint8_t>(result[i]);
+    if (!!(ASCII_TO_SUNK[octet] & SUNK_SEND_SHIFT))
       sunkSend(true, SUNK_SHIFT_L);
-    sunkSend(true, ASCII_TO_SUNK[result[i]] & 0xFF);
-    sunkSend(false, ASCII_TO_SUNK[result[i]] & 0xFF);
-    if (!!(ASCII_TO_SUNK[result[i]] & SUNK_SEND_SHIFT))
+    sunkSend(true, ASCII_TO_SUNK[octet] & 0xFF);
+    sunkSend(false, ASCII_TO_SUNK[octet] & 0xFF);
+    if (!!(ASCII_TO_SUNK[octet] & SUNK_SEND_SHIFT))
       sunkSend(false, SUNK_SHIFT_L);
   }
 }

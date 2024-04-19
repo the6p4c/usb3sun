@@ -13,7 +13,7 @@ struct Buzzer {
   inline static const unsigned int plugPitch = 261.6255653005986346778499935233; // C4
   inline static const unsigned int plugPitch2 = 391.99543598174929408569953045983; // G4
 
-  typedef enum class State {
+  typedef enum class State : int {
     NONE,
     BELL,
     CLICK,

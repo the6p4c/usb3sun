@@ -126,8 +126,9 @@ struct Settings {
         return 4800;
       case MouseBaud::_::S9600:
         return 9600;
+      default:
+        return 0;
     }
-    return 0;
   }
 
   static void begin();

@@ -258,7 +258,6 @@ size_t usb3sun_uhid_parse_report_descriptor(usb3sun_hid_report_info *result, siz
     result[i].usage_page = tuh_result[i].usage_page;
   }
   return tuh_result_len;
-  hid_mouse_report_t x;
 }
 
 void usb3sun_debug_init(int (*printf)(const char *format, ...)) {
@@ -477,7 +476,8 @@ static uint64_t history_filter;
 static bool display_current[32][128]{};
 static bool display_next[32][128]{};
 
-static void draw_dot(int16_t x, int16_t y, bool inverted) {
+static void draw_dot(int16_t x_, int16_t y_, bool inverted) {
+  auto x = static_cast<size_t>(x_), y = static_cast<size_t>(y_);
   if (y >= 0 && y < sizeof display_next / sizeof *display_next) {
     if (x >= 0 && x < sizeof *display_next / sizeof **display_next) {
       display_next[y][x] = !inverted;
@@ -898,10 +898,12 @@ void usb3sun_display_clear(void) {
 }
 
 void usb3sun_display_rect(
-    int16_t x0, int16_t y0, int16_t w, int16_t h,
+    int16_t x0_, int16_t y0_, int16_t w_, int16_t h_,
     int16_t border_radius, bool inverted, bool filled) {
   // TODO border radius
-  if (w == 0 || h == 0) return; // avoid underflow
+  if (w_ <= 0 || h_ <= 0) return; // avoid underflow
+  auto x0 = static_cast<size_t>(x0_), y0 = static_cast<size_t>(y0_);
+  auto w = static_cast<size_t>(w_), h = static_cast<size_t>(h_);
   size_t y1 = y0 + h - 1, x1 = x0 + w - 1;
   for (size_t y = y0; y <= y1; y++) {
     for (size_t x = x0; x <= x1; x++) {
@@ -940,16 +942,17 @@ void usb3sun_display_vline(int16_t x, int16_t y0, int16_t h, bool inverted, int1
   }
 }
 
-void usb3sun_display_text(int16_t x0, int16_t y0, bool inverted, const char *text, bool opaque) {
+void usb3sun_display_text(int16_t x0_, int16_t y0_, bool inverted, const char *text, bool opaque) {
   constexpr size_t advance = 6;
   constexpr size_t glyph_width = 5;
   constexpr size_t glyph_height = 8;
+  auto x0 = static_cast<size_t>(x0_), y0 = static_cast<size_t>(y0_);
   for (; *text != '\0'; text += 1) {
     uint8_t i = *text;
     if (i != (uint8_t)'\xFF') {
-      for (int16_t x = x0; x < x0 + glyph_width; x++) {
+      for (size_t x = x0; x < x0 + glyph_width; x++) {
         uint8_t line = adafruit_gfx_classic[i * glyph_width + (x - x0)];
-        for (int16_t y = y0; y < y0 + glyph_height; y++, line >>= 1) {
+        for (size_t y = y0; y < y0 + glyph_height; y++, line >>= 1) {
           if (!!(line & 1)) {
             draw_dot(x, y, inverted);
           } else if (opaque) {

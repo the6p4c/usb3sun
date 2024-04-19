@@ -19,8 +19,6 @@
 #include "sunk.h"
 #include "usb.h"
 #include "view.h"
-#include "splash.xbm"
-#include "logo.xbm"
 
 const char *const MODIFIER_NAMES[] = {
   "CtrlL", "ShiftL", "AltL", "GuiL",
@@ -85,10 +83,12 @@ struct DefaultView : View {
   }
 
   void handleKey(const UsbkChanges &changes) override {
+#ifdef DEBUG_TIMINGS
     unsigned long t = usb3sun_micros();
+#endif
 
 #ifdef SUNK_ENABLE
-    for (int i = 0; i < changes.dvLen; i++) {
+    for (size_t i = 0; i < changes.dvLen; i++) {
       // for DV bindings, make when key makes and break when key breaks
       if (uint8_t sunkMake = USBK_TO_SUNK.dv[changes.dv[i].usbkModifier])
         sunkSend(changes.dv[i].make, sunkMake);
@@ -98,7 +98,7 @@ struct DefaultView : View {
     // treat simultaneous DV and Sel changes as DV before Sel, for special bindings
     const uint8_t lastModifiers = changes.kreport.modifier;
 
-    for (int i = 0; i < changes.selLen; i++) {
+    for (size_t i = 0; i < changes.selLen; i++) {
       const uint8_t usbkSelector = changes.sel[i].usbkSelector;
       const uint8_t make = changes.sel[i].make;
 
@@ -137,7 +137,7 @@ struct DefaultView : View {
     }
 
 #ifdef DEBUG_TIMINGS
-    Sprintf("sent in %lu\n", usb3sun_micros() - t);
+    Sprintf("sent in %ju\n", usb3sun_micros() - t);
 #endif
   }
 };
@@ -148,7 +148,7 @@ void setup() {
   // pico led on, then configure pin modes
   pinout.begin();
   Sprintln("usb3sun " USB3SUN_VERSION);
-  Sprintf("pinout: v%d\n", usb3sun_pinout_version());
+  Sprintf("pinout: v%zu\n", usb3sun_pinout_version());
 
   usb3sun_display_init();
   Settings::begin();
@@ -174,7 +174,6 @@ void drawStatus(int16_t x, int16_t y, const char *label, bool on) {
 }
 
 void loop() {
-  const auto t = usb3sun_micros();
   usb3sun_display_clear();
   View::paint();
   usb3sun_display_flush();
@@ -302,6 +301,10 @@ void loop1() {
       Sprintf("hid [%zu]: usb [%u:%u]: set led report %02Xh\n", i, dev_addr, instance, hid[i].led.report);
 #endif
       tuh_hid_set_report(dev_addr, instance, report_id, HID_REPORT_TYPE_OUTPUT, &hid[i].led.report, sizeof(hid[i].led.report));
+#else
+      (void) dev_addr;
+      (void) instance;
+      (void) report_id;
 #endif
     }
   }
@@ -421,7 +424,9 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
     case USB3SUN_UHID_KEYBOARD: {
       const UsbkReport *kreport = reinterpret_cast<const UsbkReport *>(report);
 
+#ifdef DEBUG_TIMINGS
       unsigned long t = usb3sun_micros();
+#endif
 
       for (int i = 0; i < 6; i++) {
         if (kreport->keycode[i] != USBK_RESERVED && kreport->keycode[i] < USBK_FIRST_KEYCODE) {
@@ -471,7 +476,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
       Sprintln();
 #endif
 #ifdef DEBUG_TIMINGS
-      Sprintf("diffed in %lu\n", usb3sun_micros() - t);
+      Sprintf("diffed in %ju\n", usb3sun_micros() - t);
 #endif
 
       View::sendKeys(changes);
@@ -1193,16 +1198,12 @@ static bool run_test(const char *test_name) {
   return false;
 }
 
-static void handleDemoInput(std::optional<char> cur, const struct termios &termiosOrig) {
+static void handleDemoInput(std::optional<uint8_t> cur, const struct termios &termiosOrig) {
   static enum {
     NORMAL,
     ESC,
     CSI,
   } inputState = NORMAL;
-  static auto inputStatePrev = inputState;
-  auto t = usb3sun_micros();
-  static auto tPrev = t;
-  auto delta = t - tPrev;
   switch (inputState) {
     case NORMAL: {
       if (cur.has_value()) {
@@ -1274,11 +1275,7 @@ static void handleDemoInput(std::optional<char> cur, const struct termios &termi
     default: abort();
   }
 end:
-  // if (inputStatePrev != inputState) {
-  //   fprintf(stderr, ">>> %d\n", inputState);
-  // }
-  inputStatePrev = inputState;
-  tPrev = t;
+  ;
 }
 
 static void initDisplay(const char *outputPath) {
@@ -1335,7 +1332,7 @@ int main(int argc, char **argv) {
         bool hadInput = false;
         int input;
         while ((input = usb3sun_debug_read()) != -1) {
-          handleDemoInput(input, termiosOrig);
+          handleDemoInput(static_cast<uint8_t>(input), termiosOrig);
           hadInput = true;
           prev = input;
           if (input == /* ESC */ '\033') {
