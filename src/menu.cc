@@ -61,6 +61,9 @@ static const MenuItemPainter MENU_ITEM_PAINTERS[] = {
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Wipe idprom (AAh)");
   },
+  [](int16_t &marqueeX, size_t i, bool on) {
+    drawMenuItem(marqueeX, i, on, "Help: https://go.daz.cat/usb3sun");
+  },
 };
 
 static const size_t MENU_ITEM_COUNT = sizeof(MENU_ITEM_PAINTERS) / sizeof(MENU_ITEM_PAINTERS[0]);
