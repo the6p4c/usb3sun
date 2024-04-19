@@ -841,17 +841,17 @@ static bool run_test(const char *test_name) {
         return true;
       }
       if (!strcmp(path, "/forceClick")) {
-        //            [      version ][   enum : int ]
+        //            [      version ][ enum:int32_t ]
         memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
         return true;
       }
       if (!strcmp(path, "/mouseBaud")) {
-        //            [      version ][   enum : int ]
+        //            [      version ][ enum:int32_t ]
         memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
         return true;
       }
       if (!strcmp(path, "/hostid")) {
-        //            [      version ][     unsigned char[6] ][  pad ]
+        //            [      version ][           uint8_t[6] ][  pad ]
         memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = 12);
         return true;
       }
@@ -882,22 +882,22 @@ static bool run_test(const char *test_name) {
     usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
       if (!strcmp(path, "/clickDuration")) {
-        //            [      version ][      padding ][                unsigned long ]
+        //            [      version ][      padding ][                     uint64_t ]
         memcpy(data, "\x00\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
         return true;
       }
       if (!strcmp(path, "/forceClick")) {
-        //            [      version ][   enum : int ]
+        //            [      version ][ enum:int32_t ]
         memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
         return true;
       }
       if (!strcmp(path, "/mouseBaud")) {
-        //            [      version ][   enum : int ]
+        //            [      version ][ enum:int32_t ]
         memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
         return true;
       }
       if (!strcmp(path, "/hostid")) {
-        //            [      version ][     unsigned char[6] ][  pad ]
+        //            [      version ][           uint8_t[6] ][  pad ]
         memcpy(data, "\x00\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = 12);
         return true;
       }
@@ -939,7 +939,7 @@ static bool run_test(const char *test_name) {
         return true;
       }
       if (!strcmp(path, "/hostid")) {
-        //            [      version ][     unsigned char[6] ][??]
+        //            [      version ][           uint8_t[6] ][??]
         memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA", actual_len = 11);
         return true;
       }

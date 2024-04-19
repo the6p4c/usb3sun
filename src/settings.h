@@ -9,12 +9,14 @@
 #include "mutex.h"
 #include "pinout.h"
 
-#define SETTING_V1_WRAPPER_TYPE(_wrapper_name, _file_name, _payload_type, ...) \
-  struct _wrapper_name { \
-    static const unsigned currentVersion = 1; \
+#define SETTING_V1_WRAPPER_TYPE(_wrapper_name, _file_name, _padding_before, _payload_type, _padding_after, ...) \
+  struct __attribute__((packed)) _wrapper_name { \
+    static const uint32_t currentVersion = 1; \
     static constexpr const char *const path = "/" _file_name; \
-    unsigned version = currentVersion; \
+    uint32_t version = currentVersion; \
+    uint8_t paddingBefore[_padding_before]; \
     _payload_type value = __VA_ARGS__; \
+    uint8_t paddingAfter[_padding_after]; \
     inline bool operator==(const _wrapper_name &other) const { \
       return this->value == other.value; \
     } \
@@ -22,7 +24,7 @@
 
 #define SETTING_ENUM(_name, ...) \
 struct _name { \
-  typedef enum class State: int { __VA_ARGS__, VALUE_COUNT } _; \
+  typedef enum class State: int32_t { __VA_ARGS__, VALUE_COUNT } _; \
   State current; \
   operator State&() { return current; } \
   inline bool operator==(const _name &other) const { \
@@ -44,7 +46,7 @@ SETTING_ENUM(ForceClick, NO, OFF, ON);
 SETTING_ENUM(MouseBaud, S1200, S2400, S4800, S9600);
 struct ClickDurationV2 {
   static constexpr const char *const path = "/clickDuration.v2";
-  using Value = unsigned long;
+  using Value = uint64_t;
   static constexpr Value defaultValue {5}; // [0,100]
 };
 struct ForceClickV2 {
@@ -61,9 +63,9 @@ struct HostidV2 {
   static constexpr const char *const path = "/hostid.v2";
   // wrapper type to ensure that hostid values are modifiable lvalues.
   struct Value {
-    unsigned char value[6];
-    const unsigned char &operator[](size_t i) const { return value[i]; }
-    unsigned char &operator[](size_t i) { return value[i]; }
+    uint8_t value[6];
+    const uint8_t &operator[](size_t i) const { return value[i]; }
+    uint8_t &operator[](size_t i) { return value[i]; }
     inline bool operator==(const Value &other) const {
       return !memcmp(value, other.value, sizeof value);
     }
@@ -73,10 +75,18 @@ struct HostidV2 {
   };
   static constexpr Value defaultValue {{'0', '0', '0', '0', '0', '0'}};
 };
-SETTING_V1_WRAPPER_TYPE(ClickDurationV1, "clickDuration", ClickDurationV2::Value, ClickDurationV2::defaultValue);
-SETTING_V1_WRAPPER_TYPE(ForceClickV1, "forceClick", ForceClickV2::Value, ForceClickV2::defaultValue);
-SETTING_V1_WRAPPER_TYPE(MouseBaudV1, "mouseBaud", MouseBaudV2::Value, MouseBaudV2::defaultValue);
-SETTING_V1_WRAPPER_TYPE(HostidV1, "hostid", HostidV2::Value, HostidV2::defaultValue);
+SETTING_V1_WRAPPER_TYPE(ClickDurationV1, "clickDuration", 4, ClickDurationV2::Value, 0, ClickDurationV2::defaultValue);
+SETTING_V1_WRAPPER_TYPE(ForceClickV1, "forceClick", 0, ForceClickV2::Value, 0, ForceClickV2::defaultValue);
+SETTING_V1_WRAPPER_TYPE(MouseBaudV1, "mouseBaud", 0, MouseBaudV2::Value, 0, MouseBaudV2::defaultValue);
+SETTING_V1_WRAPPER_TYPE(HostidV1, "hostid", 0, HostidV2::Value, 2, HostidV2::defaultValue);
+static_assert(sizeof (ClickDurationV2::Value) == 8);
+static_assert(sizeof (ForceClickV2::Value) == 4);
+static_assert(sizeof (MouseBaudV2::Value) == 4);
+static_assert(sizeof (HostidV2::Value) == 6);
+static_assert(sizeof (ClickDurationV1) == 16);
+static_assert(sizeof (ForceClickV1) == 8);
+static_assert(sizeof (MouseBaudV1) == 8);
+static_assert(sizeof (HostidV1) == 12);
 struct Settings {
   ClickDurationV2::Value clickDuration {ClickDurationV2::defaultValue};
   ForceClickV2::Value forceClick {ForceClickV2::defaultValue};
