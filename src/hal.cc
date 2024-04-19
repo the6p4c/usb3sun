@@ -520,7 +520,7 @@ bool operator==(const PinoutV2Op &p, const PinoutV2Op &q) { return true; }
 bool operator==(const SunkInitOp &p, const SunkInitOp &q) { return true; }
 bool operator==(const SunkReadOp &p, const SunkReadOp &q) { return true; }
 bool operator==(const SunkWriteOp &p, const SunkWriteOp &q) { return p.data == q.data; }
-bool operator==(const SunmInitOp &p, const SunmInitOp &q) { return true; }
+bool operator==(const SunmInitOp &p, const SunmInitOp &q) { return p.baud == q.baud; }
 bool operator==(const SunmWriteOp &p, const SunmWriteOp &q) { return p.data == q.data; }
 bool operator==(const GpioReadOp &p, const GpioReadOp &q) { return p.pin == q.pin && p.value == q.value; }
 bool operator==(const GpioWriteOp &p, const GpioWriteOp &q) { return p.pin == q.pin && p.value == q.value; }
@@ -546,7 +546,7 @@ std::ostream &operator<<(std::ostream &s, const PinoutV2Op &o) { return s << "pi
 std::ostream &operator<<(std::ostream &s, const SunkInitOp &o) { return s << "sunk_init"; }
 std::ostream &operator<<(std::ostream &s, const SunkReadOp &o) { return s << "sunk_read"; }
 std::ostream &operator<<(std::ostream &s, const SunkWriteOp &o) { return s << "sunk_write " << o.data; }
-std::ostream &operator<<(std::ostream &s, const SunmInitOp &o) { return s << "sunm_init"; }
+std::ostream &operator<<(std::ostream &s, const SunmInitOp &o) { return s << "sunm_init " << o.baud; }
 std::ostream &operator<<(std::ostream &s, const SunmWriteOp &o) { return s << "sunm_write " << o.data; }
 std::ostream &operator<<(std::ostream &s, const GpioReadOp &o) { return s << "gpio_read " << (unsigned)o.pin << " " << o.value; }
 std::ostream &operator<<(std::ostream &s, const GpioWriteOp &o) { return s << "gpio_write " << (unsigned)o.pin << " " << o.value; }
@@ -663,7 +663,7 @@ size_t usb3sun_sunk_write(uint8_t *data, size_t len) {
 }
 
 void usb3sun_sunm_init(uint32_t baud) {
-  push_history(SunmInitOp {});
+  push_history(SunmInitOp {baud});
 }
 
 size_t usb3sun_sunm_write(uint8_t *data, size_t len) {

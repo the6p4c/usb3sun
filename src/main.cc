@@ -595,7 +595,7 @@ static bool run_test(const char *test_name) {
       SunkInitOp {},
 #endif
 #ifdef SUNM_ENABLE
-      SunmInitOp {},
+      SunmInitOp {9600},
 #endif
       GpioWriteOp {LED_PIN, false},
     });
@@ -615,7 +615,7 @@ static bool run_test(const char *test_name) {
       GpioWriteOp {KTX_ENABLE, false},
 #endif
 #ifdef SUNM_ENABLE
-      SunmInitOp {},
+      SunmInitOp {9600},
 #endif
       GpioWriteOp {LED_PIN, false},
     });

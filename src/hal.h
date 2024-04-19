@@ -36,7 +36,7 @@ typedef struct {
     struct SunkInitOp { static const uint64_t id = 1 << 1; };
     struct SunkReadOp { static const uint64_t id = 1 << 2; };
     struct SunkWriteOp { static const uint64_t id = 1 << 3; std::vector<uint8_t> data; };
-    struct SunmInitOp { static const uint64_t id = 1 << 4; };
+    struct SunmInitOp { static const uint64_t id = 1 << 4; uint32_t baud; };
     struct SunmWriteOp { static const uint64_t id = 1 << 5; std::vector<uint8_t> data; };
     struct GpioReadOp { static const uint64_t id = 1 << 6; usb3sun_pin pin; bool value; };
     struct GpioWriteOp { static const uint64_t id = 1 << 7; usb3sun_pin pin; bool value; };
