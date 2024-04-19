@@ -61,44 +61,32 @@ typedef struct {
       uint64_t micros;
       Op op;
     };
-    bool operator==(const PinoutV2Op &p, const PinoutV2Op &q);
-    bool operator==(const SunkInitOp &p, const SunkInitOp &q);
-    bool operator==(const SunkReadOp &p, const SunkReadOp &q);
-    bool operator==(const SunkWriteOp &p, const SunkWriteOp &q);
-    bool operator==(const SunmInitOp &p, const SunmInitOp &q);
-    bool operator==(const SunmWriteOp &p, const SunmWriteOp &q);
-    bool operator==(const GpioReadOp &p, const GpioReadOp &q);
-    bool operator==(const GpioWriteOp &p, const GpioWriteOp &q);
-    bool operator==(const UhidRequestReportOp &p, const UhidRequestReportOp &q);
-    bool operator==(const BuzzerStartOp &p, const BuzzerStartOp &q);
-    bool operator==(const FsReadOp &p, const FsReadOp &q);
-    bool operator==(const FsWriteOp &p, const FsWriteOp &q);
-    bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q);
-    bool operator!=(const SunkInitOp &p, const SunkInitOp &q);
-    bool operator!=(const SunkReadOp &p, const SunkReadOp &q);
-    bool operator!=(const SunkWriteOp &p, const SunkWriteOp &q);
-    bool operator!=(const SunmInitOp &p, const SunmInitOp &q);
-    bool operator!=(const SunmWriteOp &p, const SunmWriteOp &q);
-    bool operator!=(const GpioReadOp &p, const GpioReadOp &q);
-    bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q);
-    bool operator!=(const UhidRequestReportOp &p, const UhidRequestReportOp &q);
-    bool operator!=(const BuzzerStartOp &p, const BuzzerStartOp &q);
-    bool operator!=(const FsReadOp &p, const FsReadOp &q);
-    bool operator!=(const FsWriteOp &p, const FsWriteOp &q);
-    std::ostream &operator<<(std::ostream &s, const PinoutV2Op &o);
-    std::ostream &operator<<(std::ostream &s, const SunkInitOp &o);
-    std::ostream &operator<<(std::ostream &s, const SunkReadOp &o);
-    std::ostream &operator<<(std::ostream &s, const SunkWriteOp &o);
-    std::ostream &operator<<(std::ostream &s, const SunmInitOp &o);
-    std::ostream &operator<<(std::ostream &s, const SunmWriteOp &o);
-    std::ostream &operator<<(std::ostream &s, const GpioReadOp &o);
-    std::ostream &operator<<(std::ostream &s, const GpioWriteOp &o);
-    std::ostream &operator<<(std::ostream &s, const UhidRequestReportOp &o);
+    std::ostream &operator<<(std::ostream &s, const std::vector<uint8_t> &v);
     std::ostream &operator<<(std::ostream &s, const Op &o);
     std::ostream &operator<<(std::ostream &s, const Entry &v);
-    std::ostream &operator<<(std::ostream &s, const BuzzerStartOp &v);
-    std::ostream &operator<<(std::ostream &s, const FsReadOp &v);
-    std::ostream &operator<<(std::ostream &s, const FsWriteOp &v);
+    template <typename T>
+    std::ostream &operator<<(std::ostream &s, const std::optional<T> &v) {
+      if (!v.has_value()) {
+        return s << "{}";
+      }
+      return s << "{" << *v << "}";
+    }
+#define DERIVE_OP(_name, _eq, _display) \
+    static inline bool operator==(const _name &p, const _name &q) { return _eq; } \
+    static inline bool operator!=(const _name &p, const _name &q) { return !(p == q); }; \
+    static inline std::ostream &operator<<(std::ostream &s, const _name &o) { return s << _display; };
+    DERIVE_OP(PinoutV2Op, true, "pinout_v2");
+    DERIVE_OP(SunkInitOp, true, "sunk_init");
+    DERIVE_OP(SunkReadOp, true, "sunk_read");
+    DERIVE_OP(SunkWriteOp, p.data == q.data, "sunk_write " << o.data);
+    DERIVE_OP(SunmInitOp, p.baud == q.baud, "sunm_init " << o.baud);
+    DERIVE_OP(SunmWriteOp, p.data == q.data, "sunm_write " << o.data);
+    DERIVE_OP(GpioReadOp, p.pin == q.pin && p.value == q.value, "gpio_read " << (unsigned)o.pin << " " << o.value);
+    DERIVE_OP(GpioWriteOp, p.pin == q.pin && p.value == q.value, "gpio_write " << (unsigned)o.pin << " " << o.value);
+    DERIVE_OP(UhidRequestReportOp, p.dev_addr == q.dev_addr && p.instance == q.instance, "uhid_request_report " << (unsigned)o.dev_addr << " " << (unsigned)o.instance);
+    DERIVE_OP(BuzzerStartOp, p.pitch == q.pitch, "buzzer_start " << o.pitch);
+    DERIVE_OP(FsReadOp, p.path == q.path && p.expected_len == q.expected_len && p.data == q.data, "fs_read " << o.path << " " << o.expected_len << " " << o.data);
+    DERIVE_OP(FsWriteOp, p.path == q.path && p.data == q.data, "fs_write " << o.path << " " << o.data);
     void usb3sun_test_init(uint64_t history_filter_mask);
     void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);
     void usb3sun_mock_sunk_read(const char *data, size_t len);

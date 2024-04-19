@@ -493,12 +493,6 @@ static void draw_dot(int16_t x_, int16_t y_, bool inverted) {
   }
 }
 
-// <https://en.cppreference.com/w/cpp/utility/variant/visit#Example>
-template<class... Ts>
-struct overloaded : Ts... { using Ts::operator()...; };
-template<class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
-
 // <https://en.cppreference.com/w/cpp/container/vector/vector#Example>
 std::ostream &operator<<(std::ostream &s, const std::vector<uint8_t> &v) {
   std::ofstream old{};
@@ -515,53 +509,6 @@ std::ostream &operator<<(std::ostream &s, const std::vector<uint8_t> &v) {
   s.copyfmt(old);
   return s;
 }
-
-template <typename T>
-std::ostream &operator<<(std::ostream &s, const std::optional<T> &v) {
-  if (!v.has_value()) {
-    return s << "{}";
-  }
-  return s << "{" << *v << "}";
-}
-
-bool operator==(const PinoutV2Op &p, const PinoutV2Op &q) { return true; }
-bool operator==(const SunkInitOp &p, const SunkInitOp &q) { return true; }
-bool operator==(const SunkReadOp &p, const SunkReadOp &q) { return true; }
-bool operator==(const SunkWriteOp &p, const SunkWriteOp &q) { return p.data == q.data; }
-bool operator==(const SunmInitOp &p, const SunmInitOp &q) { return p.baud == q.baud; }
-bool operator==(const SunmWriteOp &p, const SunmWriteOp &q) { return p.data == q.data; }
-bool operator==(const GpioReadOp &p, const GpioReadOp &q) { return p.pin == q.pin && p.value == q.value; }
-bool operator==(const GpioWriteOp &p, const GpioWriteOp &q) { return p.pin == q.pin && p.value == q.value; }
-bool operator==(const UhidRequestReportOp &p, const UhidRequestReportOp &q) { return p.dev_addr == q.dev_addr && p.instance == q.instance; }
-bool operator==(const BuzzerStartOp &p, const BuzzerStartOp &q) { return p.pitch == q.pitch; }
-bool operator==(const FsReadOp &p, const FsReadOp &q) { return p.path == q.path && p.expected_len == q.expected_len && p.data == q.data; }
-bool operator==(const FsWriteOp &p, const FsWriteOp &q) { return p.path == q.path && p.data == q.data; }
-
-bool operator!=(const PinoutV2Op &p, const PinoutV2Op &q) { return !(p == q); }
-bool operator!=(const SunkInitOp &p, const SunkInitOp &q) { return !(p == q); }
-bool operator!=(const SunkReadOp &p, const SunkReadOp &q) { return !(p == q); }
-bool operator!=(const SunkWriteOp &p, const SunkWriteOp &q) { return !(p == q); }
-bool operator!=(const SunmInitOp &p, const SunmInitOp &q) { return !(p == q); }
-bool operator!=(const SunmWriteOp &p, const SunmWriteOp &q) { return !(p == q); }
-bool operator!=(const GpioReadOp &p, const GpioReadOp &q) { return !(p == q); }
-bool operator!=(const GpioWriteOp &p, const GpioWriteOp &q) { return !(p == q); }
-bool operator!=(const UhidRequestReportOp &p, const UhidRequestReportOp &q) { return !(p == q); }
-bool operator!=(const BuzzerStartOp &p, const BuzzerStartOp &q) { return !(p == q); }
-bool operator!=(const FsReadOp &p, const FsReadOp &q) { return !(p == q); }
-bool operator!=(const FsWriteOp &p, const FsWriteOp &q) { return !(p == q); }
-
-std::ostream &operator<<(std::ostream &s, const PinoutV2Op &o) { return s << "pinout_v2"; }
-std::ostream &operator<<(std::ostream &s, const SunkInitOp &o) { return s << "sunk_init"; }
-std::ostream &operator<<(std::ostream &s, const SunkReadOp &o) { return s << "sunk_read"; }
-std::ostream &operator<<(std::ostream &s, const SunkWriteOp &o) { return s << "sunk_write " << o.data; }
-std::ostream &operator<<(std::ostream &s, const SunmInitOp &o) { return s << "sunm_init " << o.baud; }
-std::ostream &operator<<(std::ostream &s, const SunmWriteOp &o) { return s << "sunm_write " << o.data; }
-std::ostream &operator<<(std::ostream &s, const GpioReadOp &o) { return s << "gpio_read " << (unsigned)o.pin << " " << o.value; }
-std::ostream &operator<<(std::ostream &s, const GpioWriteOp &o) { return s << "gpio_write " << (unsigned)o.pin << " " << o.value; }
-std::ostream &operator<<(std::ostream &s, const UhidRequestReportOp &o) { return s << "uhid_request_report " << (unsigned)o.dev_addr << " " << (unsigned)o.instance; }
-std::ostream &operator<<(std::ostream &s, const BuzzerStartOp &o) { return s << "buzzer_start " << o.pitch; }
-std::ostream &operator<<(std::ostream &s, const FsReadOp &o) { return s << "fs_read " << o.path << " " << o.expected_len << " " << o.data; }
-std::ostream &operator<<(std::ostream &s, const FsWriteOp &o) { return s << "fs_write " << o.path << " " << o.data; }
 
 std::ostream &operator<<(std::ostream &s, const Op &o) {
   std::visit([&s](const auto &o) { s << o; }, o);
