@@ -1,6 +1,7 @@
 #ifndef USB3SUN_VIEW_H
 #define USB3SUN_VIEW_H
 
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 
@@ -31,7 +32,8 @@ struct View {
   static void push(View *);
   static void pop();
   static void paint();
-  static void key(const UsbkChanges &);
+  static void sendKeys(const UsbkChanges &);
+  static void sendMakeBreak(std::bitset<8> usbkModifiers, uint8_t usbkSelector);
 };
 
 #endif

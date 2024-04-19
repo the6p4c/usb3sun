@@ -478,7 +478,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
       Sprintf("diffed in %lu\n", usb3sun_micros() - t);
 #endif
 
-      View::key(changes);
+      View::sendKeys(changes);
 
       // commit the DV and Sel changes
       state.lastModifiers = changes.kreport.modifier;
@@ -846,8 +846,7 @@ static void handleDemoInput(std::optional<char> cur, const struct termios &termi
             break;
           default:
             if (auto usbk = ASCII_TO_USBK[*cur]) {
-              View::key(UsbkChanges {{}, {}, {{(uint8_t)usbk, true}}, 0, 1});
-              View::key(UsbkChanges {{}, {}, {{(uint8_t)usbk, false}}, 0, 1});
+              View::sendMakeBreak({}, usbk);
             } else {
               Sprintf("\033[33m%02X\033[0m", *cur);
             }
@@ -862,8 +861,7 @@ static void handleDemoInput(std::optional<char> cur, const struct termios &termi
             inputState = CSI;
             goto end;
           case ' ':
-            View::key(UsbkChanges {{USBK_CTRL_R}, {{USBK_CTRL_R, true}}, {{USBK_SPACE, true}}, 1, 1});
-            View::key(UsbkChanges {{}, {{USBK_CTRL_R, false}}, {{USBK_SPACE, false}}, 1, 1});
+            View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
             break;
           default:
             if (*cur >= ' ' && *cur <= '~') {
@@ -876,8 +874,7 @@ static void handleDemoInput(std::optional<char> cur, const struct termios &termi
         inputState = NORMAL;
       } else {
         // escape key
-        View::key(UsbkChanges {{}, {}, {{USBK_ESCAPE, true}}, 0, 1});
-        View::key(UsbkChanges {{}, {}, {{USBK_ESCAPE, false}}, 0, 1});
+        View::sendMakeBreak({}, USBK_ESCAPE);
         inputState = NORMAL;
       }
     } break;
@@ -885,20 +882,16 @@ static void handleDemoInput(std::optional<char> cur, const struct termios &termi
       if (cur.has_value()) {
         switch (*cur) {
           case 'A': // CUU
-            View::key(UsbkChanges {{}, {}, {{USBK_UP, true}}, 0, 1});
-            View::key(UsbkChanges {{}, {}, {{USBK_UP, false}}, 0, 1});
+            View::sendMakeBreak({}, USBK_UP);
             break;
           case 'B': // CUD
-            View::key(UsbkChanges {{}, {}, {{USBK_DOWN, true}}, 0, 1});
-            View::key(UsbkChanges {{}, {}, {{USBK_DOWN, false}}, 0, 1});
+            View::sendMakeBreak({}, USBK_DOWN);
             break;
           case 'C': // CUF
-            View::key(UsbkChanges {{}, {}, {{USBK_RIGHT, true}}, 0, 1});
-            View::key(UsbkChanges {{}, {}, {{USBK_RIGHT, false}}, 0, 1});
+            View::sendMakeBreak({}, USBK_RIGHT);
             break;
           case 'D': // CUB
-            View::key(UsbkChanges {{}, {}, {{USBK_LEFT, true}}, 0, 1});
-            View::key(UsbkChanges {{}, {}, {{USBK_LEFT, false}}, 0, 1});
+            View::sendMakeBreak({}, USBK_LEFT);
             break;
         }
         if (*cur >= 0x40 && *cur <= 0x7E) {
