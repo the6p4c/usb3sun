@@ -585,6 +585,10 @@ static void help() {
   }
 }
 
+static std::vector<uint8_t> bytes(size_t len, const char *data) {
+  return {data, data + len};
+}
+
 static bool run_test(const char *test_name) {
   if (!strcmp(test_name, "setup_pinout_v1")) {
     usb3sun_test_init(PinoutV2Op::id | SunkInitOp::id | SunmInitOp::id | GpioWriteOp::id | GpioReadOp::id);
@@ -937,9 +941,8 @@ static bool run_test(const char *test_name) {
     View::sendMakeBreak({}, USBK_ENTER); // save settings
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
     TEST_ASSERT_EQ(settings.forceClick(), ForceClick::_::OFF, "%d");
-    const char *expected = "\x01\x00\x00\x00\x01\x00\x00\x00";
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/forceClick", {expected, expected + 8}},
+      FsWriteOp {"/forceClick", bytes(8, "\x01\x00\x00\x00\x01\x00\x00\x00")},
     })) return false;
 
     // when the click duration setting is changed, the setting should change in memory,
@@ -953,9 +956,8 @@ static bool run_test(const char *test_name) {
     View::sendMakeBreak({}, USBK_ENTER); // save settings
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
     TEST_ASSERT_EQ(settings.clickDuration(), 10, "%lu");
-    expected = "\x01\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x00\x00\x00\x00\x00";
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/clickDuration", {expected, expected + 16}},
+      FsWriteOp {"/clickDuration", bytes(16, "\x01\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x00\x00\x00\x00\x00")},
     })) return false;
 
     // when the mouse baud setting is changed, the setting should change in memory,
@@ -970,9 +972,8 @@ static bool run_test(const char *test_name) {
     View::sendMakeBreak({}, USBK_ENTER); // save settings
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
     TEST_ASSERT_EQ(settings.mouseBaudReal(), 4800, "%lu");
-    expected = "\x01\x00\x00\x00\x02\x00\x00\x00";
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/mouseBaud", {expected, expected + 8}},
+      FsWriteOp {"/mouseBaud", bytes(8, "\x01\x00\x00\x00\x02\x00\x00\x00")},
 #ifdef SUNM_ENABLE
       SunmInitOp {4800},
 #endif
@@ -1047,9 +1048,8 @@ static bool run_test(const char *test_name) {
     View::sendMakeBreak({}, USBK_ENTER); // save settings
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
     TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'1', '0', '0', '0', '0', '0'}}), "(no printf support)");
-    const char *expected = "\x01\x00\x00\x00\x31\x30\x30\x30\x30\x30\x00\x00";
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/hostid", {expected, expected + 12}},
+      FsWriteOp {"/hostid", bytes(12, "\x01\x00\x00\x00\x31\x30\x30\x30\x30\x30\x00\x00")},
     })) return false;
 
     return true;
