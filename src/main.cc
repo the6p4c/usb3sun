@@ -570,8 +570,9 @@ static std::vector<const char *> test_names = {
   "buzzer_click",
   "settings_read_ok",
   "settings_read_not_found",
-  "settings_read_wrong_version",
-  "settings_read_too_short",
+  "settings_read_v1_ok",
+  "settings_read_v1_wrong_version",
+  "settings_read_v1_too_short",
   "view_stack",
   "menu_settings",
   "menu_hostid",
@@ -754,7 +755,7 @@ static bool run_test(const char *test_name) {
     })) return false;
 
     // click when forceClick is on, even when click mode is disabled.
-    settings.forceClick().current = ForceClick::_::ON;
+    settings.forceClick.current = ForceClick::_::ON;
     pumpSunkInput();
     pressKey();
     pumpBuzzerUpdates();
@@ -764,7 +765,7 @@ static bool run_test(const char *test_name) {
     })) return false;
 
     // no click when forceClick is off, even when click mode is enabled.
-    settings.forceClick().current = ForceClick::_::OFF;
+    settings.forceClick.current = ForceClick::_::OFF;
     usb3sun_mock_sunk_read("\x0A", 1); // SUNK_CLICK_ON
     pumpSunkInput();
     pressKey();
@@ -776,52 +777,189 @@ static bool run_test(const char *test_name) {
   }
 
   if (!strcmp(test_name, "settings_read_ok")) {
-    usb3sun_test_init(0);
+    usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
-      if (!!strcmp(path, "/clickDuration")) return false;
-      //            [      version ][      padding ][                unsigned long ]
-      memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
-      return true;
+      if (!strcmp(path, "/clickDuration.v2")) {
+        memcpy(data, "\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 8);
+        return true;
+      }
+      if (!strcmp(path, "/forceClick.v2")) {
+        memcpy(data, "\x02\x00\x00\x00", actual_len = 4);
+        return true;
+      }
+      if (!strcmp(path, "/mouseBaud.v2")) {
+        memcpy(data, "\x02\x00\x00\x00", actual_len = 4);
+        return true;
+      }
+      if (!strcmp(path, "/hostid.v2")) {
+        memcpy(data, "\x31\x32\x33\x34\x35\x36", actual_len = 6);
+        return true;
+      }
+      return false;
     });
     setup();
-    TEST_ASSERT_EQ(settings.clickDuration(), 0x5555555555555555UL, "%ju");
-    return true;
+    TEST_ASSERT_EQ(settings.clickDuration, 0x5555555555555555, "%ju");
+    TEST_ASSERT_EQ(settings.forceClick, ForceClick::_::ON, "%jd");
+    TEST_ASSERT_EQ(settings.mouseBaud, MouseBaud::_::S4800, "%jd");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'1', '2', '3', '4', '5', '6'}}), "(no printf support)");
+    return assert_then_clear_test_history(std::vector<Op> {
+      FsReadOp {"/clickDuration.v2", 8, bytes(8, "\x55\x55\x55\x55\x55\x55\x55\x55")},
+      FsReadOp {"/forceClick.v2", 4, bytes(4, "\x02\x00\x00\x00")},
+      FsReadOp {"/mouseBaud.v2", 4, bytes(4, "\x02\x00\x00\x00")},
+      FsReadOp {"/hostid.v2", 6, bytes(6, "\x31\x32\x33\x34\x35\x36")},
+    });
   }
 
   if (!strcmp(test_name, "settings_read_not_found")) {
-    usb3sun_test_init(0);
+    usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
       return false;
     });
     setup();
-    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%ju");
-    return true;
+    TEST_ASSERT_EQ(settings.clickDuration, 5, "%ju");
+    TEST_ASSERT_EQ(settings.forceClick, ForceClick::_::NO, "%jd");
+    TEST_ASSERT_EQ(settings.mouseBaud, MouseBaud::_::S9600, "%jd");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    return assert_then_clear_test_history(std::vector<Op> {
+      FsReadOp {"/clickDuration.v2", 8, {}},
+      FsReadOp {"/clickDuration", 16, {}},
+      FsReadOp {"/forceClick.v2", 4, {}},
+      FsReadOp {"/forceClick", 8, {}},
+      FsReadOp {"/mouseBaud.v2", 4, {}},
+      FsReadOp {"/mouseBaud", 8, {}},
+      FsReadOp {"/hostid.v2", 6, {}},
+      FsReadOp {"/hostid", 12, {}},
+    });
   }
 
-  if (!strcmp(test_name, "settings_read_wrong_version")) {
-    usb3sun_test_init(0);
+  if (!strcmp(test_name, "settings_read_v1_ok")) {
+    usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
-      if (!!strcmp(path, "/clickDuration")) return false;
-      //            [      version ][      padding ][                unsigned long ]
-      memcpy(data, "\x00\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
-      return true;
+      if (!strcmp(path, "/clickDuration")) {
+        //            [      version ][      padding ][                unsigned long ]
+        memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
+        return true;
+      }
+      if (!strcmp(path, "/forceClick")) {
+        //            [      version ][   enum : int ]
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        return true;
+      }
+      if (!strcmp(path, "/mouseBaud")) {
+        //            [      version ][   enum : int ]
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        return true;
+      }
+      if (!strcmp(path, "/hostid")) {
+        //            [      version ][     unsigned char[6] ][  pad ]
+        memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = 12);
+        return true;
+      }
+      return false;
     });
     setup();
-    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%ju");
-    return true;
+    TEST_ASSERT_EQ(settings.clickDuration, 0x5555555555555555, "%ju");
+    TEST_ASSERT_EQ(settings.forceClick, ForceClick::_::ON, "%jd");
+    TEST_ASSERT_EQ(settings.mouseBaud, MouseBaud::_::S4800, "%jd");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'1', '2', '3', '4', '5', '6'}}), "(no printf support)");
+    return assert_then_clear_test_history(std::vector<Op> {
+      FsReadOp {"/clickDuration.v2", 8, {}},
+      FsReadOp {"/clickDuration", 16, bytes(16, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55")},
+      FsWriteOp {"/clickDuration.v2", bytes(8, "\x55\x55\x55\x55\x55\x55\x55\x55")},
+      FsReadOp {"/forceClick.v2", 4, {}},
+      FsReadOp {"/forceClick", 8, bytes(8, "\x01\x00\x00\x00\x02\x00\x00\x00")},
+      FsWriteOp {"/forceClick.v2", bytes(4, "\x02\x00\x00\x00")},
+      FsReadOp {"/mouseBaud.v2", 4, {}},
+      FsReadOp {"/mouseBaud", 8, bytes(8, "\x01\x00\x00\x00\x02\x00\x00\x00")},
+      FsWriteOp {"/mouseBaud.v2", bytes(4, "\x02\x00\x00\x00")},
+      FsReadOp {"/hostid.v2", 6, {}},
+      FsReadOp {"/hostid", 12, bytes(12, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA")},
+      FsWriteOp {"/hostid.v2", bytes(6, "\x31\x32\x33\x34\x35\x36")},
+    });
   }
 
-  if (!strcmp(test_name, "settings_read_too_short")) {
-    usb3sun_test_init(0);
+  if (!strcmp(test_name, "settings_read_v1_wrong_version")) {
+    usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
-      if (!!strcmp(path, "/clickDuration")) return false;
-      //            [      version ][      padding ][                  7 bytes ]
-      memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55", actual_len = 15);
-      return true;
+      if (!strcmp(path, "/clickDuration")) {
+        //            [      version ][      padding ][                unsigned long ]
+        memcpy(data, "\x00\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
+        return true;
+      }
+      if (!strcmp(path, "/forceClick")) {
+        //            [      version ][   enum : int ]
+        memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        return true;
+      }
+      if (!strcmp(path, "/mouseBaud")) {
+        //            [      version ][   enum : int ]
+        memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        return true;
+      }
+      if (!strcmp(path, "/hostid")) {
+        //            [      version ][     unsigned char[6] ][  pad ]
+        memcpy(data, "\x00\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = 12);
+        return true;
+      }
+      return false;
     });
     setup();
-    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%ju");
-    return true;
+    TEST_ASSERT_EQ(settings.clickDuration, 5, "%ju");
+    TEST_ASSERT_EQ(settings.forceClick, ForceClick::_::NO, "%jd");
+    TEST_ASSERT_EQ(settings.mouseBaud, MouseBaud::_::S9600, "%jd");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    return assert_then_clear_test_history(std::vector<Op> {
+      FsReadOp {"/clickDuration.v2", 8, {}},
+      FsReadOp {"/clickDuration", 16, bytes(16, "\x00\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55")},
+      FsReadOp {"/forceClick.v2", 4, {}},
+      FsReadOp {"/forceClick", 8, bytes(8, "\x00\x00\x00\x00\x02\x00\x00\x00")},
+      FsReadOp {"/mouseBaud.v2", 4, {}},
+      FsReadOp {"/mouseBaud", 8, bytes(8, "\x00\x00\x00\x00\x02\x00\x00\x00")},
+      FsReadOp {"/hostid.v2", 6, {}},
+      FsReadOp {"/hostid", 12, bytes(12, "\x00\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA")},
+    });
+  }
+
+  if (!strcmp(test_name, "settings_read_v1_too_short")) {
+    usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
+    usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
+      if (!strcmp(path, "/clickDuration")) {
+        //            [      version ][      padding ][ ???????????????? 7 bytes ]
+        memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55", actual_len = 15);
+        return true;
+      }
+      if (!strcmp(path, "/forceClick")) {
+        //            [      version ][ ???? 3 bytes ]
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00", actual_len = 7);
+        return true;
+      }
+      if (!strcmp(path, "/mouseBaud")) {
+        //            [      version ][ ???? 3 bytes ]
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00", actual_len = 7);
+        return true;
+      }
+      if (!strcmp(path, "/hostid")) {
+        //            [      version ][     unsigned char[6] ][??]
+        memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA", actual_len = 11);
+        return true;
+      }
+      return false;
+    });
+    setup();
+    TEST_ASSERT_EQ(settings.clickDuration, 5, "%ju");
+    TEST_ASSERT_EQ(settings.forceClick, ForceClick::_::NO, "%jd");
+    TEST_ASSERT_EQ(settings.mouseBaud, MouseBaud::_::S9600, "%jd");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    return assert_then_clear_test_history(std::vector<Op> {
+      FsReadOp {"/clickDuration.v2", 8, {}},
+      FsReadOp {"/clickDuration", 16, bytes(15, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55")},
+      FsReadOp {"/forceClick.v2", 4, {}},
+      FsReadOp {"/forceClick", 8, bytes(7, "\x01\x00\x00\x00\x02\x00\x00")},
+      FsReadOp {"/mouseBaud.v2", 4, {}},
+      FsReadOp {"/mouseBaud", 8, bytes(7, "\x01\x00\x00\x00\x02\x00\x00")},
+      FsReadOp {"/hostid.v2", 6, {}},
+      FsReadOp {"/hostid", 12, bytes(11, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA")},
+    });
   }
 
   if (!strcmp(test_name, "view_stack")) {
@@ -873,7 +1011,7 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
     View::sendMakeBreak({}, USBK_N); // don't save
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.forceClick(), ForceClick::_::NO, "%d");
+    TEST_ASSERT_EQ(settings.forceClick, ForceClick::_::NO, "%d");
     if (!assert_then_clear_test_history(std::vector<Op> {
     })) return false;
 
@@ -891,7 +1029,7 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
     View::sendMakeBreak({}, USBK_N); // don't save
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%lu");
+    TEST_ASSERT_EQ(settings.clickDuration, 5, "%lu");
     if (!assert_then_clear_test_history(std::vector<Op> {
     })) return false;
 
@@ -940,9 +1078,9 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
     View::sendMakeBreak({}, USBK_ENTER); // save settings
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.forceClick(), ForceClick::_::OFF, "%d");
+    TEST_ASSERT_EQ(settings.forceClick, ForceClick::_::OFF, "%d");
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/forceClick", bytes(8, "\x01\x00\x00\x00\x01\x00\x00\x00")},
+      FsWriteOp {"/forceClick.v2", bytes(4, "\x01\x00\x00\x00")},
     })) return false;
 
     // when the click duration setting is changed, the setting should change in memory,
@@ -955,9 +1093,9 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
     View::sendMakeBreak({}, USBK_ENTER); // save settings
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.clickDuration(), 10, "%lu");
+    TEST_ASSERT_EQ(settings.clickDuration, 10, "%lu");
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/clickDuration", bytes(16, "\x01\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x00\x00\x00\x00\x00")},
+      FsWriteOp {"/clickDuration.v2", bytes(8, "\x0A\x00\x00\x00\x00\x00\x00\x00")},
     })) return false;
 
     // when the mouse baud setting is changed, the setting should change in memory,
@@ -973,7 +1111,7 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
     TEST_ASSERT_EQ(settings.mouseBaudReal(), 4800, "%lu");
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/mouseBaud", bytes(8, "\x01\x00\x00\x00\x02\x00\x00\x00")},
+      FsWriteOp {"/mouseBaud.v2", bytes(4, "\x02\x00\x00\x00")},
 #ifdef SUNM_ENABLE
       SunmInitOp {4800},
 #endif
@@ -995,7 +1133,7 @@ static bool run_test(const char *test_name) {
     findMenuItem(USBK_UP, MenuItem::GoBack);
     View::sendMakeBreak({}, USBK_RETURN); // Go back
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
     if (!assert_then_clear_test_history(std::vector<Op> {
     })) return false;
 
@@ -1015,7 +1153,7 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
     View::sendMakeBreak({}, USBK_N); // don't save
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
     if (!assert_then_clear_test_history(std::vector<Op> {
     })) return false;
 
@@ -1031,7 +1169,7 @@ static bool run_test(const char *test_name) {
     findMenuItem(USBK_UP, MenuItem::GoBack);
     View::sendMakeBreak({}, USBK_RETURN); // Go back
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'0', '0', '0', '0', '0', '0'}}), "(no printf support)");
     if (!assert_then_clear_test_history(std::vector<Op> {
     })) return false;
 
@@ -1047,9 +1185,9 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
     View::sendMakeBreak({}, USBK_ENTER); // save settings
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
-    TEST_ASSERT_EQ(settings.hostid(), (Hostid {{'1', '0', '0', '0', '0', '0'}}), "(no printf support)");
+    TEST_ASSERT_EQ(settings.hostid, (HostidV2::Value {{'1', '0', '0', '0', '0', '0'}}), "(no printf support)");
     if (!assert_then_clear_test_history(std::vector<Op> {
-      FsWriteOp {"/hostid", bytes(12, "\x01\x00\x00\x00\x31\x30\x30\x30\x30\x30\x00\x00")},
+      FsWriteOp {"/hostid.v2", bytes(6, "\x31\x30\x30\x30\x30\x30")},
     })) return false;
 
     return true;

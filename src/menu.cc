@@ -30,30 +30,30 @@ static const MenuItemPainter MENU_ITEM_PAINTERS[] = {
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Force click: %s",
-      newSettings.forceClick() == ForceClick::_::NO ? "no"
-      : newSettings.forceClick() == ForceClick::_::OFF ? "off"
-      : newSettings.forceClick() == ForceClick::_::ON ? "on"
+      newSettings.forceClick == ForceClick::_::NO ? "no"
+      : newSettings.forceClick == ForceClick::_::OFF ? "off"
+      : newSettings.forceClick == ForceClick::_::ON ? "on"
       : "?");
   },
   [](int16_t &marqueeX, size_t i, bool on) {
-    drawMenuItem(marqueeX, i, on, "Click duration: %u ms", newSettings.clickDuration());
+    drawMenuItem(marqueeX, i, on, "Click duration: %u ms", newSettings.clickDuration);
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Mouse baud: %s",
-      newSettings.mouseBaud() == MouseBaud::_::S1200 ? "1200"
-      : newSettings.mouseBaud() == MouseBaud::_::S2400 ? "2400"
-      : newSettings.mouseBaud() == MouseBaud::_::S4800 ? "4800"
-      : newSettings.mouseBaud() == MouseBaud::_::S9600 ? "9600"
+      newSettings.mouseBaud == MouseBaud::_::S1200 ? "1200"
+      : newSettings.mouseBaud == MouseBaud::_::S2400 ? "2400"
+      : newSettings.mouseBaud == MouseBaud::_::S4800 ? "4800"
+      : newSettings.mouseBaud == MouseBaud::_::S9600 ? "9600"
       : "?");
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Hostid: %c%c%c%c%c%c",
-      newSettings.hostidRef()[0],
-      newSettings.hostidRef()[1],
-      newSettings.hostidRef()[2],
-      newSettings.hostidRef()[3],
-      newSettings.hostidRef()[4],
-      newSettings.hostidRef()[5]);
+      newSettings.hostid[0],
+      newSettings.hostid[1],
+      newSettings.hostid[2],
+      newSettings.hostid[3],
+      newSettings.hostid[4],
+      newSettings.hostid[5]);
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Reprogram idprom");
@@ -141,32 +141,32 @@ void MenuView::sel(uint8_t usbkSelector) {
     case USBK_RIGHT:
       switch (selectedItem) {
         case (size_t)MenuItem::ForceClick:
-          ++newSettings.forceClick();
+          ++newSettings.forceClick;
           break;
         case (size_t)MenuItem::ClickDuration:
-          if (newSettings.clickDuration() < 96u) {
-            newSettings.clickDuration() += 5u;
-            buzzer.click(newSettings.clickDuration());
+          if (newSettings.clickDuration < 96u) {
+            newSettings.clickDuration += 5u;
+            buzzer.click(newSettings.clickDuration);
           }
           break;
         case (size_t)MenuItem::MouseBaud:
-          ++newSettings.mouseBaud();
+          ++newSettings.mouseBaud;
           break;
       }
       break;
     case USBK_LEFT:
       switch (selectedItem) {
         case (size_t)MenuItem::ForceClick:
-          --newSettings.forceClick();
+          --newSettings.forceClick;
           break;
         case (size_t)MenuItem::ClickDuration:
-          if (newSettings.clickDuration() > 4u) {
-            newSettings.clickDuration() -= 5u;
-            buzzer.click(newSettings.clickDuration());
+          if (newSettings.clickDuration > 4u) {
+            newSettings.clickDuration -= 5u;
+            buzzer.click(newSettings.clickDuration);
           }
           break;
         case (size_t)MenuItem::MouseBaud:
-          --newSettings.mouseBaud();
+          --newSettings.mouseBaud;
           break;
       }
       break;
@@ -181,18 +181,18 @@ void MenuView::sel(uint8_t usbkSelector) {
           }
           break;
         case (size_t)MenuItem::Hostid:
-          HOSTID_VIEW.open(&newSettings.hostid());
+          HOSTID_VIEW.open(&newSettings.hostid);
           break;
         case (size_t)MenuItem::ReprogramIdprom: {
           WAIT_VIEW.open("Reprogramming...");
 
           unsigned hostid24 =
-            decodeHex(settings.hostidRef()[0]) << 20
-            | decodeHex(settings.hostidRef()[1]) << 16
-            | decodeHex(settings.hostidRef()[2]) << 12
-            | decodeHex(settings.hostidRef()[3]) << 8
-            | decodeHex(settings.hostidRef()[4]) << 4
-            | decodeHex(settings.hostidRef()[5]);
+            decodeHex(settings.hostid[0]) << 20
+            | decodeHex(settings.hostid[1]) << 16
+            | decodeHex(settings.hostid[2]) << 12
+            | decodeHex(settings.hostid[3]) << 8
+            | decodeHex(settings.hostid[4]) << 4
+            | decodeHex(settings.hostid[5]);
 
           unsigned i = 0;
           // https://funny.computer.daz.cat/sun/nvram-hostid-faq.txt
@@ -305,22 +305,22 @@ void SaveSettingsView::handleKey(const UsbkChanges &changes) {
         case USBK_RETURN:
         case USBK_ENTER: {
           bool doRestartSunm = false;
-          if (newSettings.clickDuration() != settings.clickDuration()) {
-            settings.clickDuration() = newSettings.clickDuration();
-            settings.write(settings.clickDuration_field);
+          if (newSettings.clickDuration != settings.clickDuration) {
+            settings.clickDuration = newSettings.clickDuration;
+            settings.write<ClickDurationV2>(settings.clickDuration);
           }
-          if (newSettings.forceClick() != settings.forceClick()) {
-            settings.forceClick() = newSettings.forceClick();
-            settings.write(settings.forceClick_field);
+          if (newSettings.forceClick != settings.forceClick) {
+            settings.forceClick = newSettings.forceClick;
+            settings.write<ForceClickV2>(settings.forceClick);
           }
-          if (newSettings.mouseBaud() != settings.mouseBaud()) {
-            settings.mouseBaud() = newSettings.mouseBaud();
-            settings.write(settings.mouseBaud_field);
+          if (newSettings.mouseBaud != settings.mouseBaud) {
+            settings.mouseBaud = newSettings.mouseBaud;
+            settings.write<MouseBaudV2>(settings.mouseBaud);
             doRestartSunm = true;
           }
-          if (newSettings.hostid() != settings.hostid()) {
-            settings.hostid() = newSettings.hostid();
-            settings.write(settings.hostid_field);
+          if (newSettings.hostid != settings.hostid) {
+            settings.hostid = newSettings.hostid;
+            settings.write<HostidV2>(settings.hostid);
           }
           if (doRestartSunm) {
             pinout.restartSunm();

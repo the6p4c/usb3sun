@@ -97,7 +97,7 @@ void HostidView::handleKey(const UsbkChanges &changes) {
   }
 }
 
-void HostidView::open(Hostid *hostidInOut) {
+void HostidView::open(HostidV2::Value *hostidInOut) {
   if (isOpen)
     return;
   isOpen = true;

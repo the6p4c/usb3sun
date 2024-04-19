@@ -8,13 +8,13 @@
 
 struct HostidView : View {
   bool isOpen = false;
-  Hostid newHostid{};
-  Hostid *hostidOut = nullptr;
+  HostidV2::Value newHostid{};
+  HostidV2::Value *hostidOut = nullptr;
   size_t cursorIndex = 0;
 
   void handlePaint() override;
   void handleKey(const UsbkChanges &) override;
-  void open(Hostid *hostidInOut);
+  void open(HostidV2::Value *hostidInOut);
   void ok();
   void cancel();
   void left();

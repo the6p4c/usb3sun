@@ -20,12 +20,6 @@
     } \
   };
 
-#define SETTING_V1_WRAPPER_FIELD(_wrapper_name, _field_name, _payload_type) \
-  _wrapper_name _field_name##_field; \
-  _payload_type &_field_name() { \
-    return _field_name##_field.value; \
-  }
-
 #define SETTING_ENUM(_name, ...) \
 struct _name { \
   typedef enum class State: int { __VA_ARGS__, VALUE_COUNT } _; \
@@ -48,37 +42,59 @@ extern usb3sun_mutex settingsMutex;
 
 SETTING_ENUM(ForceClick, NO, OFF, ON);
 SETTING_ENUM(MouseBaud, S1200, S2400, S4800, S9600);
-struct Hostid {
-  unsigned char value[6];
-  inline bool operator==(const Hostid &other) const {
-    return !memcmp(value, other.value, sizeof value);
-  }
-  inline bool operator!=(const Hostid &other) const {
-    return !(*this == other);
-  }
+struct ClickDurationV2 {
+  static constexpr const char *const path = "/clickDuration.v2";
+  using Value = unsigned long;
+  static constexpr Value defaultValue {5}; // [0,100]
 };
-SETTING_V1_WRAPPER_TYPE(ClickDurationV1, "clickDuration", unsigned long, 5uL); // [0,100]
-SETTING_V1_WRAPPER_TYPE(ForceClickV1, "forceClick", ForceClick, {ForceClick::_::NO});
-SETTING_V1_WRAPPER_TYPE(MouseBaudV1, "mouseBaud", MouseBaud, {MouseBaud::_::S9600});
-SETTING_V1_WRAPPER_TYPE(HostidV1, "hostid", Hostid, {'0', '0', '0', '0', '0', '0'});
+struct ForceClickV2 {
+  static constexpr const char *const path = "/forceClick.v2";
+  using Value = ForceClick;
+  static constexpr Value defaultValue {ForceClick::_::NO};
+};
+struct MouseBaudV2 {
+  static constexpr const char *const path = "/mouseBaud.v2";
+  using Value = MouseBaud;
+  static constexpr Value defaultValue {MouseBaud::_::S9600};
+};
+struct HostidV2 {
+  static constexpr const char *const path = "/hostid.v2";
+  // wrapper type to ensure that hostid values are modifiable lvalues.
+  struct Value {
+    unsigned char value[6];
+    const unsigned char &operator[](size_t i) const { return value[i]; }
+    unsigned char &operator[](size_t i) { return value[i]; }
+    inline bool operator==(const Value &other) const {
+      return !memcmp(value, other.value, sizeof value);
+    }
+    inline bool operator!=(const Value &other) const {
+      return !(*this == other);
+    }
+  };
+  static constexpr Value defaultValue {{'0', '0', '0', '0', '0', '0'}};
+};
+SETTING_V1_WRAPPER_TYPE(ClickDurationV1, "clickDuration", ClickDurationV2::Value, ClickDurationV2::defaultValue);
+SETTING_V1_WRAPPER_TYPE(ForceClickV1, "forceClick", ForceClickV2::Value, ForceClickV2::defaultValue);
+SETTING_V1_WRAPPER_TYPE(MouseBaudV1, "mouseBaud", MouseBaudV2::Value, MouseBaudV2::defaultValue);
+SETTING_V1_WRAPPER_TYPE(HostidV1, "hostid", HostidV2::Value, HostidV2::defaultValue);
 struct Settings {
-  SETTING_V1_WRAPPER_FIELD(ClickDurationV1, clickDuration, unsigned long);
-  SETTING_V1_WRAPPER_FIELD(ForceClickV1, forceClick, ForceClick);
-  SETTING_V1_WRAPPER_FIELD(MouseBaudV1, mouseBaud, MouseBaud);
-  SETTING_V1_WRAPPER_FIELD(HostidV1, hostid, Hostid);
+  ClickDurationV2::Value clickDuration {ClickDurationV2::defaultValue};
+  ForceClickV2::Value forceClick {ForceClickV2::defaultValue};
+  MouseBaudV2::Value mouseBaud {MouseBaudV2::defaultValue};
+  HostidV2::Value hostid {HostidV2::defaultValue};
 
   inline bool operator==(const Settings &other) const {
-    return this->clickDuration_field == other.clickDuration_field
-      && this->forceClick_field == other.forceClick_field
-      && this->mouseBaud_field == other.mouseBaud_field
-      && this->hostid_field == other.hostid_field;
+    return this->clickDuration == other.clickDuration
+      && this->forceClick == other.forceClick
+      && this->mouseBaud == other.mouseBaud
+      && this->hostid == other.hostid;
   }
   inline bool operator!=(const Settings& other) const {
     return !(*this == other);
   }
 
   uint32_t mouseBaudReal() {
-    switch (mouseBaud()) {
+    switch (mouseBaud) {
       case MouseBaud::_::S1200:
         return 1200;
       case MouseBaud::_::S2400:
@@ -91,44 +107,52 @@ struct Settings {
     return 0;
   }
 
-  const unsigned char *hostidRef() const {
-    return hostid_field.value.value;
-  }
-  unsigned char *hostidMut() {
-    return hostid_field.value.value;
-  }
-
   static void begin();
   void readAll();
-  template <typename SettingV1> void readV1(SettingV1& setting);
-  template <typename Setting> void write(const Setting& setting);
+  template <typename SettingV1> bool readV1(SettingV1& setting);
+  template <typename Setting, typename Value> bool read(Value& value);
+  template <typename Setting, typename Value> void write(const Value& value);
 };
 
 extern Settings settings;
 
 template <typename SettingV1>
-void Settings::readV1(SettingV1& setting) {
+bool Settings::readV1(SettingV1& setting) {
   MutexGuard m{&settingsMutex};
   SettingV1 result{};
   if (usb3sun_fs_read(SettingV1::path, reinterpret_cast<char *>(&result), sizeof result)) {
-    if (result.version == SettingV1::currentVersion) {
-      Sprintf("settings: read %s: version %u\n", SettingV1::path, SettingV1::currentVersion);
+    if (result.version == 1) {
+      Sprintf("settings: read %s (v1): ok\n", SettingV1::path);
       setting = result;
-      return;
+      return true;
     } else {
-      Sprintf("settings: read %s: wrong version\n", SettingV1::path);
+      Sprintf("settings: read %s (v1): wrong version\n", SettingV1::path);
     }
   } else {
-    Sprintf("settings: read %s: file not found\n", SettingV1::path);
+    Sprintf("settings: read %s (v1): not found\n", SettingV1::path);
   }
-  setting = SettingV1{};
+  return false;
 }
 
-template <typename Setting>
-void Settings::write(const Setting& setting) {
+template <typename Setting, typename Value>
+bool Settings::read(Value& value) {
   MutexGuard m{&settingsMutex};
-  if (usb3sun_fs_write(Setting::path, reinterpret_cast<const char *>(&setting), sizeof setting)) {
-    Sprintf("settings: write %s: version %u\n", Setting::path, Setting::currentVersion);
+  Value result{};
+  if (usb3sun_fs_read(Setting::path, reinterpret_cast<char *>(&result), sizeof result)) {
+    Sprintf("settings: read %s: ok\n", Setting::path);
+    value = result;
+    return true;
+  } else {
+    Sprintf("settings: read %s: not found\n", Setting::path);
+  }
+  return false;
+}
+
+template <typename Setting, typename Value>
+void Settings::write(const Value& value) {
+  MutexGuard m{&settingsMutex};
+  if (usb3sun_fs_write(Setting::path, reinterpret_cast<const char *>(&value), sizeof value)) {
+    Sprintf("settings: write %s: ok\n", Setting::path);
   } else {
     Sprintf("settings: write %s: failed\n", Setting::path);
   }

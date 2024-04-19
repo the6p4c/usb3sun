@@ -83,7 +83,7 @@ void Buzzer::setCurrent(unsigned long t, Buzzer::State value) {
 }
 
 unsigned long Buzzer::clickDuration() const {
-  return temporaryClickDuration.value_or(settings.clickDuration());
+  return temporaryClickDuration.value_or(settings.clickDuration);
 }
 
 void Buzzer::update() {
@@ -93,7 +93,7 @@ void Buzzer::update() {
 
 void Buzzer::click(std::optional<unsigned long> temporaryDuration) {
   MutexGuard m{&buzzerMutex};
-  switch (settings.forceClick()) {
+  switch (settings.forceClick) {
     case ForceClick::_::NO:
       if (!state.clickEnabled) return;
       break;
