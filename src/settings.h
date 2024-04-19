@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <ostream>
 
 #include "hal.h"
 #include "mutex.h"
@@ -27,6 +28,15 @@ struct _name { \
   typedef enum class State: int32_t { __VA_ARGS__, VALUE_COUNT } _; \
   State current; \
   operator State&() { return current; } \
+  /* very inefficient, only for debugging! */ \
+  friend std::ostream &operator<<(std::ostream &s, const State &o) { \
+    constexpr const char *const names = #__VA_ARGS__; \
+    for (size_t i = 0, spacesSeen = 0; names[i] != '\0'; i++) { \
+      if (names[i] == ' ') spacesSeen++; \
+      else if (names[i] != ',' && spacesSeen == (size_t)o) s << names[i]; \
+    } \
+    return s; \
+  } \
   inline bool operator==(const _name &other) const { \
     return this->current == other.current; \
   } \
@@ -71,6 +81,9 @@ struct HostidV2 {
     }
     inline bool operator!=(const Value &other) const {
       return !(*this == other);
+    }
+    friend std::ostream &operator<<(std::ostream &s, const Value &o) {
+      return s << o.value[0] << o.value[1] << o.value[2] << o.value[3] << o.value[4] << o.value[5];
     }
   };
   static constexpr Value defaultValue {{'0', '0', '0', '0', '0', '0'}};
