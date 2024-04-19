@@ -193,6 +193,10 @@ bool usb3sun_fs_init(void) {
   return LittleFS.begin();
 }
 
+bool usb3sun_fs_wipe(void) {
+  return LittleFS.format();
+}
+
 bool usb3sun_fs_read(const char *path, char *data, size_t len) {
   if (File f = LittleFS.open(path, "r")) {
     size_t result = f.readBytes(data, len);
@@ -568,6 +572,10 @@ void usb3sun_allow_debug_over_cdc(void) {}
 void usb3sun_allow_debug_over_uart(void) {}
 
 bool usb3sun_fs_init(void) {
+  return false;
+}
+
+bool usb3sun_fs_wipe(void) {
   return false;
 }
 
