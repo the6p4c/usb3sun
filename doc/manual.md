@@ -160,14 +160,16 @@ usb3sun has been tested successfully with
 - 04A5:8001 BenQ Zowie EC2 **mouse**
 - 046D:C063 Dell M-UAV-DEL8 **mouse**
 - FEED:1307 gBoards Gergo **keyboard** with QMK
+- 03F0:6941 HP 150 Wired **Keyboard** (HSA-A013K, 664R5AA)
 - 0461:4E24 HP KB71211 **keyboard** — no scroll lock or right meta
 - 0461:4E23 HP MOGIUO **mouse**
 - 04D9:1503 Inland 208397 **keyboard**
+- 30FA:2031 Keji KECK801UKB **keyboard**
 - 17EF:608D Lenovo EMS-537A **mouse**
 - 17EF:6019 Lenovo MSU1175 **mouse**
 - 045E:0040 Microsoft Wheel **Mouse** Optical 1.1A — enumeration is unreliable
-- 045E:0752 Microsoft Wired **Keyboard** 400 — [with tinyusb2.patch](firmware.md)
-- 045E:0750 Microsoft Wired **Keyboard** 600 — [with tinyusb2.patch](firmware.md)
+- 045E:0752 Microsoft Wired **Keyboard** 400 — [with patch](firmware.md)
+- 045E:0750 Microsoft Wired **Keyboard** 600 — [with patch](firmware.md)
 - 045E:0773 Microsoft Explorer Touch **Mouse** (model 1490)
 - FEED:6061 Preonic OLKB-60 **keyboard** with QMK
 
