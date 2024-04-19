@@ -473,6 +473,7 @@ void usb3sun_display_rect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t bo
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <termios.h>
 
 static struct {
   size_t version = 1;
@@ -587,6 +588,31 @@ const std::vector<Entry> &usb3sun_test_get_history(void) {
 
 void usb3sun_test_clear_history(void) {
   history.clear();
+}
+
+static bool exit_on_reboot = false;
+void usb3sun_test_exit_on_reboot(void) {
+  exit_on_reboot = true;
+}
+
+void usb3sun_test_terminal_demo_mode(bool enabled) {
+  struct termios termios;
+  if (tcgetattr(0, &termios) == -1) {
+    perror("tcgetattr");
+  } else {
+    if (enabled) {
+      // turn off canonical mode, so we can read input immediately.
+      termios.c_lflag &= ~ICANON;
+      // turn off local echo, so we can echo input our own way.
+      termios.c_lflag &= ~ECHO;
+    } else {
+      termios.c_lflag |= ICANON;
+      termios.c_lflag |= ECHO;
+    }
+    if (tcsetattr(0, TCSAFLUSH, &termios) == -1) {
+      perror("tcsetattr");
+    }
+  }
 }
 
 size_t usb3sun_pinout_version(void) {
@@ -729,8 +755,10 @@ bool usb3sun_fifo_pop(uint32_t *result) {
 }
 
 void usb3sun_reboot(void) {
-  // TODO reset termios ICANON | ECHO
-  exit(0);
+  if (exit_on_reboot) {
+    usb3sun_test_terminal_demo_mode(false);
+    exit(0);
+  }
 }
 
 uint64_t usb3sun_micros(void) {

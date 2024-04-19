@@ -99,6 +99,8 @@ typedef struct {
     void usb3sun_mock_display_output(int fd);
     const std::vector<Entry> &usb3sun_test_get_history(void);
     void usb3sun_test_clear_history(void);
+    void usb3sun_test_exit_on_reboot(void);
+    void usb3sun_test_terminal_demo_mode(bool enabled);
   }
 #endif
 

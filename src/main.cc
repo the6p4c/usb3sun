@@ -525,7 +525,6 @@ out:
 #include <iostream>
 #include <unistd.h>
 #include <fcntl.h>
-#include <termios.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -1198,7 +1197,7 @@ static bool run_test(const char *test_name) {
   return false;
 }
 
-static void handleDemoInput(std::optional<uint8_t> cur, const struct termios &termiosOrig) {
+static void handleDemoInput(std::optional<uint8_t> cur) {
   static enum {
     NORMAL,
     ESC,
@@ -1212,9 +1211,7 @@ static void handleDemoInput(std::optional<uint8_t> cur, const struct termios &te
             inputState = ESC;
             break;
           case 'q':
-            if (tcsetattr(0, TCSAFLUSH, &termiosOrig) == -1) {
-              perror("tcsetattr");
-            }
+            usb3sun_test_terminal_demo_mode(false);
             exit(0);
             break;
           default:
@@ -1308,21 +1305,9 @@ int main(int argc, char **argv) {
           perror("mkdtemp");
         }
       }
-      struct termios termios;
-      struct termios termiosOrig;
-      if (tcgetattr(0, &termios) == -1) {
-        perror("tcgetattr");
-      } else {
-        termiosOrig = termios;
-        // turn off canonical mode, so we can read input immediately
-        termios.c_lflag &= ~ICANON;
-        // turn off local echo
-        termios.c_lflag &= ~ECHO;
-        if (tcsetattr(0, TCSAFLUSH, &termios) == -1) {
-          perror("tcsetattr");
-        }
-      }
       usb3sun_test_init(0);
+      usb3sun_test_exit_on_reboot();
+      usb3sun_test_terminal_demo_mode(true);
       setup();
       setup1();
       while (true) {
@@ -1332,7 +1317,7 @@ int main(int argc, char **argv) {
         bool hadInput = false;
         int input;
         while ((input = usb3sun_debug_uart_read()) != -1) {
-          handleDemoInput(static_cast<uint8_t>(input), termiosOrig);
+          handleDemoInput(static_cast<uint8_t>(input));
           hadInput = true;
           prev = input;
           if (input == /* ESC */ '\033') {
@@ -1341,7 +1326,7 @@ int main(int argc, char **argv) {
         }
         if (!hadInput && prev == /* ESC */ '\033') {
           if (usb3sun_micros() - tLastEsc > escAltTimeout) {
-            handleDemoInput({}, termiosOrig);
+            handleDemoInput({});
           }
         }
         loop();
