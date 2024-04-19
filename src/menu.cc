@@ -21,16 +21,6 @@ SaveSettingsView SAVE_SETTINGS_VIEW{};
 template<typename... Args>
 static void drawMenuItem(int16_t &marqueeX, size_t i, bool on, const char *fmt, Args... args);
 
-enum class MenuItem : size_t {
-  GoBack,
-  ForceClick,
-  ClickDuration,
-  MouseBaud,
-  Hostid,
-  ReprogramIdprom,
-  WipeIdprom,
-};
-
 static Settings newSettings;
 
 using MenuItemPainter = void (*)(int16_t &marqueeX, size_t i, bool on);

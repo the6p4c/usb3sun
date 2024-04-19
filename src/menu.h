@@ -6,6 +6,16 @@
 
 #include "view.h"
 
+enum class MenuItem : size_t {
+  GoBack,
+  ForceClick,
+  ClickDuration,
+  MouseBaud,
+  Hostid,
+  ReprogramIdprom,
+  WipeIdprom,
+};
+
 struct MenuView : View {
   bool isOpen = false;
   size_t selectedItem = 0u;

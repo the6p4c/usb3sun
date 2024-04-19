@@ -573,6 +573,7 @@ static std::vector<const char *> test_names = {
   "settings_read_wrong_version",
   "settings_read_too_short",
   "view_stack",
+  "menu_settings",
 };
 
 static void help() {
@@ -826,6 +827,156 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &MENU_VIEW, "%p");
     View::sendMakeBreak({}, USBK_RETURN); // Go back
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    return true;
+  }
+
+  const auto findMenuItem = [](uint8_t usbkSelector, MenuItem targetItem) {
+    auto oldItem = MENU_VIEW.selectedItem;
+    while (MENU_VIEW.selectedItem != (size_t)targetItem) {
+      View::sendMakeBreak({}, usbkSelector);
+      if (MENU_VIEW.selectedItem == oldItem)
+        usb3sun_panic("BUG: menu item not found!\n");
+      oldItem = MENU_VIEW.selectedItem;
+    }
+  };
+
+  if (!strcmp(test_name, "menu_settings")) {
+    usb3sun_test_init(FsWriteOp::id | SunmInitOp::id);
+    setup();
+    if (!assert_then_clear_test_history(std::vector<Op> {
+#ifdef SUNM_ENABLE
+      SunmInitOp {9600},
+#endif
+    })) return false;
+
+    // no confirm-save when menu was not touched.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+
+    // confirm-save when force click setting is changed,
+    // but no settings change or write if we say no.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::ForceClick);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Force click: off
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ESCAPE); // cancel
+    TEST_ASSERT_EQ(View::peek(), &MENU_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_N); // don't save
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.forceClick(), ForceClick::_::NO, "%d");
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // confirm-save when click duration setting is changed,
+    // but no settings change or write if we say no.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::ClickDuration);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Click duration: 10 ms
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ESCAPE); // cancel
+    TEST_ASSERT_EQ(View::peek(), &MENU_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_N); // don't save
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.clickDuration(), 5, "%lu");
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // confirm-save when mouse baud setting is changed,
+    // but no settings change or write if we say no.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::MouseBaud);
+    View::sendMakeBreak({}, USBK_LEFT); // → Mouse baud: 4800
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ESCAPE); // cancel
+    TEST_ASSERT_EQ(View::peek(), &MENU_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_N); // don't save
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.mouseBaudReal(), 9600, "%lu");
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // no confirm-save when settings are changed and changed back.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::ForceClick);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Force click: off
+    View::sendMakeBreak({}, USBK_LEFT); // → Force click: no
+    findMenuItem(USBK_DOWN, MenuItem::ClickDuration);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Click duration: 10 ms
+    View::sendMakeBreak({}, USBK_LEFT); // → Click duration: 5 ms
+    findMenuItem(USBK_DOWN, MenuItem::MouseBaud);
+    View::sendMakeBreak({}, USBK_LEFT); // → Mouse baud: 4800
+    View::sendMakeBreak({}, USBK_RIGHT); // → Mouse baud: 9600
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    if (!assert_then_clear_test_history(std::vector<Op> {
+    })) return false;
+
+    // when the force click setting is changed, the setting should change in memory,
+    // and we should issue a fs write for only the changed setting.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::ForceClick);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Force click: off
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ENTER); // save settings
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.forceClick(), ForceClick::_::OFF, "%d");
+    const char *expected = "\x01\x00\x00\x00\x01\x00\x00\x00";
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      FsWriteOp {"/forceClick", {expected, expected + 8}},
+    })) return false;
+
+    // when the click duration setting is changed, the setting should change in memory,
+    // and we should issue a fs write for only the changed setting.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::ClickDuration);
+    View::sendMakeBreak({}, USBK_RIGHT); // → Click duration: 10 ms
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ENTER); // save settings
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.clickDuration(), 10, "%lu");
+    expected = "\x01\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x00\x00\x00\x00\x00";
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      FsWriteOp {"/clickDuration", {expected, expected + 16}},
+    })) return false;
+
+    // when the mouse baud setting is changed, the setting should change in memory,
+    // we should issue a fs write for only the changed setting,
+    // and we should reinit the sun mouse interface.
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    findMenuItem(USBK_DOWN, MenuItem::MouseBaud);
+    View::sendMakeBreak({}, USBK_LEFT); // → Mouse baud: 4800
+    findMenuItem(USBK_UP, MenuItem::GoBack);
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &SAVE_SETTINGS_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_ENTER); // save settings
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    TEST_ASSERT_EQ(settings.mouseBaudReal(), 4800, "%lu");
+    expected = "\x01\x00\x00\x00\x02\x00\x00\x00";
+    if (!assert_then_clear_test_history(std::vector<Op> {
+      FsWriteOp {"/mouseBaud", {expected, expected + 8}},
+#ifdef SUNM_ENABLE
+      SunmInitOp {4800},
+#endif
+    })) return false;
+
     return true;
   }
 
