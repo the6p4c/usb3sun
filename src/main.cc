@@ -572,6 +572,7 @@ static std::vector<const char *> test_names = {
   "settings_read_not_found",
   "settings_read_wrong_version",
   "settings_read_too_short",
+  "view_stack",
 };
 
 static void help() {
@@ -814,6 +815,17 @@ static bool run_test(const char *test_name) {
     });
     setup();
     TEST_ASSERT_EQ(settings.clickDuration(), 5, "%ju");
+    return true;
+  }
+
+  if (!strcmp(test_name, "view_stack")) {
+    usb3sun_test_init(0);
+    setup();
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
+    View::sendMakeBreak(USBK_CTRL_R, USBK_SPACE);
+    TEST_ASSERT_EQ(View::peek(), &MENU_VIEW, "%p");
+    View::sendMakeBreak({}, USBK_RETURN); // Go back
+    TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW, "%p");
     return true;
   }
 

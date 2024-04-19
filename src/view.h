@@ -29,6 +29,7 @@ struct View {
   virtual void handlePaint() = 0;
   virtual void handleKey(const UsbkChanges &) = 0;
 
+  static View *peek();
   static void push(View *);
   static void pop();
   static void paint();

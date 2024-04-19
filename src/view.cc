@@ -8,6 +8,12 @@
 static View *views[3]{};
 static size_t viewsLen = 0;
 
+View *View::peek() {
+  if (viewsLen == 0)
+    return nullptr;
+  return views[viewsLen - 1];
+}
+
 void View::push(View *view) {
   if (viewsLen >= sizeof(views) / sizeof(*views))
     panic2("View stack overflow");

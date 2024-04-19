@@ -31,5 +31,7 @@ struct WaitView : View {
 };
 
 extern MenuView MENU_VIEW;
+extern WaitView WAIT_VIEW;
+extern SaveSettingsView SAVE_SETTINGS_VIEW;
 
 #endif
