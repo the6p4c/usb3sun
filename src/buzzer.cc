@@ -105,6 +105,7 @@ void Buzzer::click(std::optional<unsigned long> temporaryDuration) {
   }
 
   if (current <= Buzzer::_::CLICK) {
+    this->temporaryClickDuration = temporaryDuration;
     // violation of sparc keyboard spec :) but distinguishable from bell!
     setCurrent(usb3sun_micros(), Buzzer::_::CLICK);
     pwmTone(1'000u, clickDuration());
