@@ -200,7 +200,7 @@ void MenuView::sel(uint8_t usbkSelector) {
           HOSTID_VIEW.open(&newSettings.hostid);
           break;
         case (size_t)MenuItem::ReprogramIdprom: {
-          WAIT_VIEW.open("Reprogramming...");
+          WAIT_VIEW.open("Reprogramming...", newSettings.hostid);
 
           unsigned hostid24 =
             decodeHex(newSettings.hostid[0]) << 20
@@ -255,7 +255,7 @@ void MenuView::sel(uint8_t usbkSelector) {
           close();
         } break;
         case (size_t)MenuItem::WipeIdprom: {
-          WAIT_VIEW.open("Wiping...");
+          WAIT_VIEW.open("Wiping...", {});
           for (unsigned i = 0; i < 0xF; i++)
             sunkSend("aa %x mkp\n", i);
           WAIT_VIEW.close();
@@ -288,15 +288,22 @@ const char *WaitView::name() const {
 
 void WaitView::handlePaint() {
   usb3sun_display_text(8, 8, false, message);
+  if (hostid.has_value()) {
+    char hostidText[] = "Hostid: ??????";
+    for (size_t i = 0; i < sizeof hostid->value; i++)
+      hostidText[sizeof "Hostid: " - 1 + i] = hostid->value[i];
+    usb3sun_display_text(8, 16, false, hostidText);
+  }
 }
 
 void WaitView::handleKey(const UsbkChanges &) {}
 
-void WaitView::open(const char *message) {
+void WaitView::open(const char *message, std::optional<HostidV2::Value> hostid) {
   if (isOpen)
     return;
   isOpen = true;
   this->message = message;
+  this->hostid = hostid;
   View::push(&WAIT_VIEW);
 }
 

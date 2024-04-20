@@ -3,7 +3,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
+#include "settings.h"
 #include "view.h"
 
 enum class MenuItem : size_t {
@@ -35,11 +37,12 @@ struct MenuView : View {
 struct WaitView : View {
   bool isOpen = false;
   const char *message = "";
+  std::optional<HostidV2::Value> hostid{};
 
   const char *name() const override;
   void handlePaint() override;
   void handleKey(const UsbkChanges &) override;
-  void open(const char *message);
+  void open(const char *message, std::optional<HostidV2::Value> hostid);
   void close();
 };
 
