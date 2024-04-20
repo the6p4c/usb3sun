@@ -41,7 +41,7 @@ connect the adapter to your sun workstation with the mini-din cable, and connect
 
 some sun keyboards have a power key, which switches on the workstation by toggling pin 7 of the mini-din port, in addition to sending scancodes like other keys.
 
-to switch on your workstation, press the onboard power button (rev A1+), or press **Right Ctrl+P** on your usb keyboard. note that the latter will only work if the adapter is powered externally via the usb-c port (rev A2+) or the VBUS pin of the debug header.
+to switch on your workstation, press the onboard power button (rev A1+), or press **Right Ctrl+P** on your usb keyboard. note that the latter will only work if the adapter is powered externally via the usb-c port (rev A2+) or the VBUS pin of the debug header (J3).
 
 to send the power key to software while the workstation is on, press **Right Ctrl+P** on your usb keyboard. the onboard power button (rev A1+) does not send any scancodes.
 
@@ -125,13 +125,13 @@ you can update or reflash the firmware over usb (rev A2+), or with a picoprobe.
 ### usb method
 
 1. press and hold the BOOTSEL button underneath the adapter
-2. connect the adapter’s usb-c port to your computer
+2. connect the adapter’s usb-c port (J4) to your computer
 3. release the BOOTSEL button
 4. copy firmware.uf2 to the usb mass storage device — you can copy it as a file to the FAT file system, or write to the block device directly with dd(1)
 
 ### picoprobe method
 
-you will need a [raspberry pi pico](https://www.altronics.com.au/p/z6421a-raspberry-pi-pico-rp2040-development-board-with-headers/), other than the one used by usb3sun, which we’ll call the debugger. you will also need a way to connect pins on the adapter’s debug header to pins on the debugger, such as [header pins](https://www.altronics.com.au/p/p5430-oupiin-40-way-header-pin/) and [jumper cables](https://www.altronics.com.au/p/p1023-socket-to-socket-30-way-prototyping-ribbon-strips/).
+you will need a [raspberry pi pico](https://www.altronics.com.au/p/z6421a-raspberry-pi-pico-rp2040-development-board-with-headers/), other than the one used by usb3sun, which we’ll call the debugger. you will also need a way to connect pins on the adapter’s debug header (J3) to pins on the debugger, such as [header pins](https://www.altronics.com.au/p/p5430-oupiin-40-way-header-pin/) and [jumper cables](https://www.altronics.com.au/p/p1023-socket-to-socket-30-way-prototyping-ribbon-strips/).
 
 flash the debugger with [the picoprobe firmware](https://github.com/raspberrypi/picoprobe), then connect the adapter to the debugger as follows, being sure to connect GND first and disconnect GND last.
 
@@ -149,6 +149,56 @@ to flash the adapter with firmware.elf, run the command below.
 ```
 $ openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c 'adapter speed 1000' -c 'program firmware.elf verify reset exit'
 ```
+
+## debugging and automation
+
+usb3sun has a wide range of debugging options, which you can use to investigate bugs, find hardware defects, or diagnose usb compatibility issues. with new enough hardware and firmware, you can even automate input (firmware 2.0+)!
+
+### debug logging over usb cdc
+
+by default, usb3sun has built-in debug logging over usb cdc, via the usb-c port marked “debug only” (J4) (rev A2+). building the firmware with PICOPROBE_ENABLE (firmware &lt;2.0) or without DEBUG_OVER_CDC (firmware 2.0+) will disable this.
+
+logging over usb cdc has some serious limitations:
+
+- the **debug cli** (see below) is not currently supported over usb cdc — this may change in the future
+- you can only get the logs for usb3sun this way, not the logs for tinyusb or the underlying arduino-pico framework — this will never change, because it would create a chicken-and-egg problem
+- it can be very unreliable, because the output tx may stop working if idle for even a few seconds — the reasons for this are still unclear, but may be related to flow control or a usb suspend bug
+
+to connect, plug your adapter into your computer via the usb-c port marked “debug only” (J4), then use picocom:
+
+```sh
+$ picocom -fn -b115200 --imap lfcrlf /dev/ttyACM0
+```
+
+### debug logging with the debug uart
+
+the best debug logging method is to use the UART_TX and UART_RX pins in the debug header (J3) (rev A1+), which avoids all of the limitations of logging over usb cdc.
+
+the debug uart is enabled by default in newer adapters (rev B0+), but older adapters have a hardware limitation that means you can only use the debug uart with a [custom firmware build](firmware.md#building-the-firmware-for-pico) that disables the sun keyboard interface. the exact procedure also depends on your firmware version:
+
+- if you have **rev A0**, **rev A1**, **rev A2**, or **rev A3**, with **firmware &lt;2.0**, the debug uart is **disabled by default**, unless you build the firmware with PICOPROBE_ENABLE, and doing so disables the sun keyboard interface (even with SUNK_ENABLE)
+- if you have **rev A0**, **rev A1**, **rev A2**, or **rev A3**, with **firmware 2.0+**, the debug uart is **disabled by default**, unless you build the firmware with DEBUG_OVER_UART (which is the default) but without SUNK_ENABLE (disabling the sun keyboard interface)
+- if you have **rev B0**, with **firmware 2.0+**, the debug uart is **enabled by default**, unless you build the firmware without DEBUG_OVER_UART
+
+to connect, wire up your adapter to a picoprobe (see [§ *picoprobe method*](#picoprobe-method)) or 3V3-capable usb-to-serial adapter, then use picocom:
+
+```sh
+$ picocom -fn -b115200 --imap lfcrlf /dev/ttyACM0
+```
+
+### automation with the debug cli
+
+when connected to [the debug uart](#debug-logging-with-the-debug-uart), you can type commands or press keys over that connection to send input over the sun keyboard and mouse interfaces, even without any usb devices! press **Enter** to get a prompt (`> `), then use the debug cli as follows:
+
+- press **Alt+WASD** to **move up**, **down**, **left**, or **right** on the sun mouse
+- press **Alt+QEZC** to **move diagonally** on the sun mouse
+- press **Alt+123** to **toggle the left**, **middle**, or **right** buttons on the sun mouse
+- press **Ctrl+H** to make the sun keyboard press **Backspace**
+- press **Ctrl+J** to make the sun keyboard press **Return**
+- type `stop a` to make the sun keyboard press **Stop+A**
+- type `enter` to make the sun keyboard press **Enter**
+- type `go` to make the sun keyboard type **“go” followed by Return**
+- type `help` to get help, much like the help above
 
 ## compatibility
 
