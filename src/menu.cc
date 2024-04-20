@@ -21,7 +21,7 @@ SaveSettingsView SAVE_SETTINGS_VIEW{};
 template<typename... Args>
 static void drawMenuItem(int16_t &marqueeX, size_t i, bool on, const char *fmt, Args... args);
 
-static Settings newSettings;
+static Settings newSettings{};
 
 using MenuItemPainter = void (*)(int16_t &marqueeX, size_t i, bool on);
 static const MenuItemPainter MENU_ITEM_PAINTERS[] = {

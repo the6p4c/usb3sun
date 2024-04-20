@@ -487,8 +487,8 @@ static bool display_next[32][128]{};
 
 static void draw_dot(int16_t x_, int16_t y_, bool inverted) {
   auto x = static_cast<size_t>(x_), y = static_cast<size_t>(y_);
-  if (y >= 0 && y < sizeof display_next / sizeof *display_next) {
-    if (x >= 0 && x < sizeof *display_next / sizeof **display_next) {
+  if (y < sizeof display_next / sizeof *display_next) {
+    if (x < sizeof *display_next / sizeof **display_next) {
       display_next[y][x] = !inverted;
     }
   }
