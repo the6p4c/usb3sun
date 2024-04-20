@@ -984,7 +984,7 @@ static bool run_test(const char *test_name) {
   };
 
   if (!strcmp(test_name, "menu_settings")) {
-    usb3sun_test_init(FsWriteOp::id | SunmInitOp::id | RebootOp::id);
+    usb3sun_test_init(FsWriteOp::id | SunmInitOp::id | RebootOp::id | BuzzerStartOp::id | AlarmOp::id);
     setup();
     if (!assert_then_clear_test_history(std::vector<Op> {
 #ifdef SUNM_ENABLE
@@ -1031,6 +1031,8 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW);
     TEST_ASSERT_EQ(settings.clickDuration, 5);
     if (!assert_then_clear_test_history(std::vector<Op> {
+      BuzzerStartOp {1000},
+      AlarmOp {10},
     })) return false;
 
     // confirm-save when mouse baud setting is changed,
@@ -1066,6 +1068,10 @@ static bool run_test(const char *test_name) {
     View::sendMakeBreak({}, USBK_RETURN); // Go back
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW);
     if (!assert_then_clear_test_history(std::vector<Op> {
+      BuzzerStartOp {1000},
+      AlarmOp {10},
+      BuzzerStartOp {1000},
+      AlarmOp {5},
     })) return false;
 
     // when the force click setting is changed, the setting should change in memory,
@@ -1095,6 +1101,8 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(View::peek(), &DEFAULT_VIEW);
     TEST_ASSERT_EQ(settings.clickDuration, 10);
     if (!assert_then_clear_test_history(std::vector<Op> {
+      BuzzerStartOp {1000},
+      AlarmOp {10},
       FsWriteOp {"/clickDuration.v2", bytes(8, "\x0A\x00\x00\x00\x00\x00\x00\x00")},
     })) return false;
 
@@ -1134,6 +1142,8 @@ static bool run_test(const char *test_name) {
     TEST_ASSERT_EQ(settings.clickDuration, 15);
     TEST_ASSERT_EQ(settings.mouseBaudReal(), 2400);
     if (!assert_then_clear_test_history(std::vector<Op> {
+      BuzzerStartOp {1000},
+      AlarmOp {15},
       FsWriteOp {"/clickDuration.v2", bytes(8, "\x0F\x00\x00\x00\x00\x00\x00\x00")},
       FsWriteOp {"/forceClick.v2", bytes(4, "\x02\x00\x00\x00")},
       FsWriteOp {"/mouseBaud.v2", bytes(4, "\x01\x00\x00\x00")},

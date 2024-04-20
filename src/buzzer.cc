@@ -93,15 +93,17 @@ void Buzzer::update() {
 
 void Buzzer::click(std::optional<unsigned long> temporaryDuration) {
   MutexGuard m{&buzzerMutex};
-  switch (settings.forceClick) {
-    default:
-    case ForceClick::_::NO:
-      if (!state.clickEnabled) return;
-      break;
-    case ForceClick::_::OFF:
-      return;
-    case ForceClick::_::ON:
-      break;
+  if (!temporaryDuration.has_value()) {
+    switch (settings.forceClick) {
+      default:
+      case ForceClick::_::NO:
+        if (!state.clickEnabled) return;
+        break;
+      case ForceClick::_::OFF:
+        return;
+      case ForceClick::_::ON:
+        break;
+    }
   }
 
   if (current <= Buzzer::_::CLICK) {

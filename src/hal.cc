@@ -797,7 +797,9 @@ void usb3sun_panic(const char *format, ...) {
   abort();
 }
 
-void usb3sun_alarm(uint32_t ms, void (*callback)(void)) {}
+void usb3sun_alarm(uint32_t ms, void (*callback)(void)) {
+  push_history(AlarmOp {ms});
+}
 
 bool usb3sun_gpio_read(usb3sun_pin pin) {
   bool value = mock_gpio_values[pin];
