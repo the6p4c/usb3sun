@@ -888,23 +888,27 @@ void usb3sun_display_flush(void) {
     for (size_t x = 0; x < sizeof *display_next / sizeof **display_next; x++) {
       if (display_next[y][x] != display_current[y][x]) {
         if (!mock_display_write(/* CUP 1;1 */ "\033[H")) return;
-        for (size_t x = 0; x < sizeof *display_next / sizeof **display_next + 2; x++) {
-          if (!mock_display_write("-")) return;
+        if (!mock_display_write("╔")) return;
+        for (size_t x = 0; x < sizeof *display_next / sizeof **display_next; x++) {
+          if (!mock_display_write("═")) return;
         }
+        if (!mock_display_write("╗")) return;
         if (!mock_display_write("\n")) return;
         for (size_t y = 0; y < sizeof display_next / sizeof *display_next; y += 2) {
-          if (!mock_display_write("|")) return;
+          if (!mock_display_write("║")) return;
           for (size_t x = 0; x < sizeof *display_next / sizeof **display_next; x++) {
             constexpr const char *const output[] {" ", "▄", "▀", "█"};
             if (!mock_display_write(output[display_next[y][x] << 1 | display_next[y+1][x]])) return;
             display_current[y][x] = display_next[y][x];
             display_current[y+1][x] = display_next[y+1][x];
           }
-          if (!mock_display_write("|\n")) return;
+          if (!mock_display_write("║\n")) return;
         }
-        for (size_t x = 0; x < sizeof *display_next / sizeof **display_next + 2; x++) {
-          if (!mock_display_write("-")) return;
+        if (!mock_display_write("╚")) return;
+        for (size_t x = 0; x < sizeof *display_next / sizeof **display_next; x++) {
+          if (!mock_display_write("═")) return;
         }
+        if (!mock_display_write("╝")) return;
         if (!mock_display_write("\n")) return;
         return;
       }
