@@ -1,38 +1,39 @@
 #!/bin/sh
 set -eu
 
-build_with() {
+build() {
     pio run -t clean
-    PLATFORMIO_BUILD_FLAGS="$*" pio run
+    pio run "$@"
 }
 
 # build with no flags.
-build_with # no flags
+export PLATFORMIO_BUILD_FLAGS= # no flags
+build "$@"
 
 # build with feature flags.
-build_with \
-    -DSUNK_ENABLE \
-    -DSUNM_ENABLE \
-    -DWIPE_SETTINGS \
-    -DDEBUG_TIMINGS \
-    -DUHID_LED_ENABLE \
-    -DUHID_LED_TEST \
-    -DWAIT_PIN \
-    -DWAIT_SERIAL \
-;
+export PLATFORMIO_BUILD_FLAGS='
+    -DSUNK_ENABLE
+    -DSUNM_ENABLE
+    -DWIPE_SETTINGS
+    -DDEBUG_TIMINGS
+    -DUHID_LED_ENABLE
+    -DUHID_LED_TEST
+    -DWAIT_PIN
+    -DWAIT_SERIAL
+'; build "$@"
 
 # build with feature flags and verbose flags.
-build_with \
-    -DSUNK_ENABLE \
-    -DSUNM_ENABLE \
-    -DWIPE_SETTINGS \
-    -DDEBUG_TIMINGS \
-    -DUHID_LED_ENABLE \
-    -DUHID_LED_TEST \
-    -DWAIT_PIN \
-    -DWAIT_SERIAL \
-    -DBUZZER_VERBOSE \
-    -DSUNK_VERBOSE \
-    -DSUNM_VERBOSE \
-    -DUHID_VERBOSE \
-;
+export PLATFORMIO_BUILD_FLAGS='
+    -DSUNK_ENABLE
+    -DSUNM_ENABLE
+    -DWIPE_SETTINGS
+    -DDEBUG_TIMINGS
+    -DUHID_LED_ENABLE
+    -DUHID_LED_TEST
+    -DWAIT_PIN
+    -DWAIT_SERIAL
+    -DBUZZER_VERBOSE
+    -DSUNK_VERBOSE
+    -DSUNM_VERBOSE
+    -DUHID_VERBOSE
+'; build "$@"
