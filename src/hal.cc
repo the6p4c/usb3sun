@@ -867,63 +867,44 @@ void usb3sun_buzzer_start(uint32_t pitch) {
 
 void usb3sun_display_init(void) {}
 
+static bool mock_display_write(const char *text) {
+  if (write(*mock_display_fd, text, strlen(text)) == -1) {
+    perror("write");
+    return false;
+  }
+  return true;
+}
+
 void usb3sun_display_flush(void) {
   if (!mock_display_fd.has_value()) {
     return;
   }
   static bool first = true;
   if (first) {
-    if (write(*mock_display_fd, /* CUP 1;1 ED 0 */ "\033[H\033[J", 6) == -1) {
-      perror("write");
-      return;
-    }
+    if (!mock_display_write(/* CUP 1;1 ED 0 */ "\033[H\033[J")) return;
     first = false;
   }
   for (size_t y = 0; y < sizeof display_next / sizeof *display_next; y++) {
     for (size_t x = 0; x < sizeof *display_next / sizeof **display_next; x++) {
       if (display_next[y][x] != display_current[y][x]) {
-        if (write(*mock_display_fd, /* CUP 1;1 */ "\033[H", 3) == -1) {
-          perror("write");
-          return;
-        }
+        if (!mock_display_write(/* CUP 1;1 */ "\033[H")) return;
         for (size_t x = 0; x < sizeof *display_next / sizeof **display_next + 2; x++) {
-          if (write(*mock_display_fd, "-", strlen("-")) == -1) {
-            perror("write");
-            return;
-          }
+          if (!mock_display_write("-")) return;
         }
-        if (write(*mock_display_fd, "\n", strlen("\n")) == -1) {
-          perror("write");
-          return;
-        }
+        if (!mock_display_write("\n")) return;
         for (size_t y = 0; y < sizeof display_next / sizeof *display_next; y++) {
-          if (write(*mock_display_fd, "|", strlen("|")) == -1) {
-            perror("write");
-            return;
-          }
+          if (!mock_display_write("|")) return;
           for (size_t x = 0; x < sizeof *display_next / sizeof **display_next; x++) {
             const char *output = display_next[y][x] ? "█" : " ";
-            if (write(*mock_display_fd, output, strlen(output)) == -1) {
-              perror("write");
-              return;
-            }
+            if (!mock_display_write(output)) return;
             display_current[y][x] = display_next[y][x];
           }
-          if (write(*mock_display_fd, "|\n", strlen("|\n")) == -1) {
-            perror("write");
-            return;
-          }
+          if (!mock_display_write("|\n")) return;
         }
         for (size_t x = 0; x < sizeof *display_next / sizeof **display_next + 2; x++) {
-          if (write(*mock_display_fd, "-", strlen("-")) == -1) {
-            perror("write");
-            return;
-          }
+          if (!mock_display_write("-")) return;
         }
-        if (write(*mock_display_fd, "\n", strlen("\n")) == -1) {
-          perror("write");
-          return;
-        }
+        if (!mock_display_write("\n")) return;
         return;
       }
     }
