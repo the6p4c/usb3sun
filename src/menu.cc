@@ -36,7 +36,7 @@ static const MenuItemPainter MENU_ITEM_PAINTERS[] = {
       : "?");
   },
   [](int16_t &marqueeX, size_t i, bool on) {
-    drawMenuItem(marqueeX, i, on, "Click duration: %u ms", newSettings.clickDuration);
+    drawMenuItem(marqueeX, i, on, "Click duration: %ju ms", newSettings.clickDuration);
   },
   [](int16_t &marqueeX, size_t i, bool on) {
     drawMenuItem(marqueeX, i, on, "Mouse baud: %s",
