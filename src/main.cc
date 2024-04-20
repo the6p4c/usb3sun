@@ -60,6 +60,10 @@ USB3SUN_MUTEX usb3sun_mutex settingsMutex;
 void drawStatus(int16_t x, int16_t y, const char *label, bool on);
 
 struct DefaultView : View {
+  const char *name() const override {
+    return "DefaultView";
+  }
+
   void handlePaint() override {
     usb3sun_display_text(0, 0, false, USB3SUN_VERSION);
     drawStatus(78, 0, "CLK", state.clickEnabled);

@@ -12,6 +12,7 @@ struct HostidView : View {
   HostidV2::Value *hostidOut = nullptr;
   size_t cursorIndex = 0;
 
+  const char *name() const override;
   void handlePaint() override;
   void handleKey(const UsbkChanges &) override;
   void open(HostidV2::Value *hostidInOut);

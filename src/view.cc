@@ -59,3 +59,11 @@ void View::sendMakeBreak(std::bitset<8> usbkModifiers, uint8_t usbkSelector) {
   View::sendKeys(makeChanges);
   View::sendKeys(breakChanges);
 }
+
+std::ostream &operator<<(std::ostream &s, const View &v) {
+  return s << &v;
+}
+
+std::ostream &operator<<(std::ostream &s, const View *v) {
+  return s << v->name() << "@" << (void *) v;
+}

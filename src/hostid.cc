@@ -9,6 +9,10 @@
 
 HostidView HOSTID_VIEW{};
 
+const char *HostidView::name() const {
+  return "HostidView";
+}
+
 void HostidView::handlePaint() {
   char hostid_text[sizeof newHostid + 1];
   snprintf(

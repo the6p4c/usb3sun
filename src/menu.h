@@ -23,6 +23,7 @@ struct MenuView : View {
   int16_t marqueeX = 0;
   unsigned marqueeTick = 0;
 
+  const char *name() const override;
   void handlePaint() override;
   void handleKey(const UsbkChanges &) override;
   void open();
@@ -35,6 +36,7 @@ struct WaitView : View {
   bool isOpen = false;
   const char *message = "";
 
+  const char *name() const override;
   void handlePaint() override;
   void handleKey(const UsbkChanges &) override;
   void open(const char *message);
@@ -45,6 +47,7 @@ struct SaveSettingsView : View {
   bool isOpen = false;
   const char *message = "";
 
+  const char *name() const override;
   void handlePaint() override;
   void handleKey(const UsbkChanges &) override;
   void open(const char *message);

@@ -4,6 +4,7 @@
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
+#include <ostream>
 
 #include "usb.h"
 
@@ -26,6 +27,7 @@ struct UsbkChanges {
 };
 
 struct View {
+  virtual const char *name() const = 0;
   virtual void handlePaint() = 0;
   virtual void handleKey(const UsbkChanges &) = 0;
 
@@ -35,6 +37,9 @@ struct View {
   static void paint();
   static void sendKeys(const UsbkChanges &);
   static void sendMakeBreak(std::bitset<8> usbkModifiers, uint8_t usbkSelector);
+
+  friend std::ostream &operator<<(std::ostream &s, const View &v);
+  friend std::ostream &operator<<(std::ostream &s, const View *v);
 };
 
 #endif

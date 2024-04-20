@@ -134,6 +134,10 @@ void MenuView::closeWithoutConfirmSave() {
   isOpen = false;
 }
 
+const char *MenuView::name() const {
+  return "MenuView";
+}
+
 void MenuView::handlePaint() {
   marqueeTick = (marqueeTick + 1) % 2;
   if (marqueeTick == 0)
@@ -278,6 +282,10 @@ void MenuView::sel(uint8_t usbkSelector) {
   }
 }
 
+const char *WaitView::name() const {
+  return "WaitView";
+}
+
 void WaitView::handlePaint() {
   usb3sun_display_text(8, 8, false, message);
 }
@@ -297,6 +305,10 @@ void WaitView::close() {
     return;
   View::pop();
   isOpen = false;
+}
+
+const char *SaveSettingsView::name() const {
+  return "SaveSettingsView";
 }
 
 void SaveSettingsView::handlePaint() {
