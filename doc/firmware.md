@@ -3,7 +3,14 @@
 firmware
 ========
 
-## how to build the firmware
+usb3sun uses [Nix](https://nixos.org/download/) (the package manager) to get exact versions of its dependencies.
+you can build the firmware without Nix, but your mileage may vary.
+
+there are two build environments, `pico` and `native`.
+`pico` is the real firmware that runs on a real usb3sun adapter.
+`native` runs on an ordinary linux machine, for the test suite and interactive demo.
+
+## building the firmware for `pico`
 
 1. `git apply picopiousb1.patch` ([picopiousb1.patch](../picopiousb1.patch), [#12](https://github.com/delan/usb3sun/issues/12))\
 → improves compatibility with Microsoft Wired Keyboard 600 (045E:0750)
@@ -18,7 +25,59 @@ firmware
 6. (if using Nix) `nix-shell`
 7. `pio run -e pico`
 
-### linux users
+## building the firmware for `native`
+
+1. (if using Nix) `nix-shell`
+2. `pio run -e native`
+
+## how to run the interactive demo
+
+the interactive demo can only be built for the `native` environment, and uses a named pipe (fifo(7)) to emulate the display:
+
+```sh
+$ ./run-demo.sh                     # run, creating a random fifo in /tmp
+$ ./run-demo.sh <path/to/fifo>      # run, creating a fifo at the given path
+```
+
+to get a live view of the emulated display, open another terminal, and cat the same path you gave in a loop:
+
+```sh
+$ while :; do cat <path/to/fifo>; done
+```
+
+note that due to the way named pipes work, the demo will pause until you start reading from the fifo, and will get killed with SIGPIPE if you stop reading from the fifo.
+
+input in the terminal where you ran the demo is (roughly and incompletely) translated to usb keyboard input, with a couple of exceptions:
+
+- **Alt+Space** becomes **Right Ctrl+Space**, opening the menu
+- **q** quits the demo
+
+## how to run the tests
+
+the main test suite can only be built for the `native` environment, and automatically runs multiple times to test every combination of -DSUNK_ENABLE and -DSUNM_ENABLE:
+
+```sh
+$ ./run-tests.sh                    # run all tests
+$ ./run-tests.sh all                # (same as above)
+$ ./run-tests.sh <test>             # run a specific test
+$ pio run -e native -t exec         # list available tests
+```
+
+the build tests compile the firmware with a few different sets of build flags, to ensure that they all build without errors (and show you the warnings for each):
+
+```sh
+$ ./run-build-tests.sh              # both pico and native
+$ ./run-build-tests.sh -e pico      # pico only
+$ ./run-build-tests.sh -e native    # native only
+```
+
+## general troubleshooting
+
+`*** [.pio/build/pico/firmware.elf] ModuleNotFoundError : No module named 'SCons.Tool.FortranCommon'`
+— in vscode with the platformio extension, this can happen if you start building the firmware too quickly after making changes to platformio.ini.
+wait a moment, then try again.
+
+## linux troubleshooting
 
 if you get “patch does not apply” errors:
 
@@ -36,7 +95,7 @@ git apply debug1.patch
 git -C ~/.platformio/packages/framework-arduinopico apply $PWD/debug2.patch
 ```
 
-### windows users
+## windows troubleshooting
 
 if you encounter problems with paths being too long:
 
