@@ -121,7 +121,7 @@ void MenuView::close() {
   if (!isOpen)
     return;
   if (newSettings != settings) {
-    SAVE_SETTINGS_VIEW.open("");
+    SAVE_SETTINGS_VIEW.open();
   } else {
     closeWithoutConfirmSave();
   }
@@ -368,11 +368,10 @@ void SaveSettingsView::handleKey(const UsbkChanges &changes) {
   }
 }
 
-void SaveSettingsView::open(const char *message) {
+void SaveSettingsView::open() {
   if (isOpen)
     return;
   isOpen = true;
-  this->message = message;
   View::push(&SAVE_SETTINGS_VIEW);
 }
 

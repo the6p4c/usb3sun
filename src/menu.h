@@ -45,12 +45,11 @@ struct WaitView : View {
 
 struct SaveSettingsView : View {
   bool isOpen = false;
-  const char *message = "";
 
   const char *name() const override;
   void handlePaint() override;
   void handleKey(const UsbkChanges &) override;
-  void open(const char *message);
+  void open();
   void close();
 };
 
