@@ -6,9 +6,9 @@ firmware
 usb3sun uses [Nix](https://nixos.org/download/) (the package manager) to get exact versions of its dependencies.
 you can build the firmware without Nix, but your mileage may vary.
 
-there are two build environments, `pico` and `native`.
+there are two build environments, `pico` and `linux`.
 `pico` is the real firmware that runs on a real usb3sun adapter.
-`native` runs on an ordinary linux machine, for the test suite and interactive demo.
+`linux` runs on an ordinary linux machine, for the test suite and interactive demo.
 
 ## building the firmware for `pico`
 
@@ -25,14 +25,14 @@ there are two build environments, `pico` and `native`.
 6. (if using Nix) `nix-shell`
 7. `pio run -e pico`
 
-## building the firmware for `native`
+## building the firmware for `linux`
 
 1. (if using Nix) `nix-shell`
-2. `pio run -e native`
+2. `pio run -e linux`
 
 ## how to run the interactive demo
 
-the interactive demo can only be built for the `native` environment, and uses a named pipe (fifo(7)) to emulate the display:
+the interactive demo can only be built for the `linux` environment, and uses a named pipe (fifo(7)) to emulate the display:
 
 ```sh
 $ ./run-demo.sh                     # run, creating a random fifo in /tmp
@@ -54,21 +54,21 @@ input in the terminal where you ran the demo is (roughly and incompletely) trans
 
 ## how to run the tests
 
-the main test suite can only be built for the `native` environment, and automatically runs multiple times to test every combination of -DSUNK_ENABLE and -DSUNM_ENABLE:
+the main test suite can only be built for the `linux` environment, and automatically runs multiple times to test every combination of -DSUNK_ENABLE and -DSUNM_ENABLE:
 
 ```sh
 $ ./run-tests.sh                    # run all tests
 $ ./run-tests.sh all                # (same as above)
 $ ./run-tests.sh <test>             # run a specific test
-$ pio run -e native -t exec         # list available tests
+$ pio run -e linux -t exec          # list available tests
 ```
 
 the build tests compile the firmware with a few different sets of build flags, to ensure that they all build without errors (and show you the warnings for each):
 
 ```sh
-$ ./run-build-tests.sh              # both pico and native
+$ ./run-build-tests.sh              # both pico and linux
 $ ./run-build-tests.sh -e pico      # pico only
-$ ./run-build-tests.sh -e native    # native only
+$ ./run-build-tests.sh -e linux     # linux only
 ```
 
 ## general troubleshooting

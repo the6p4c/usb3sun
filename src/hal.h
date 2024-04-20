@@ -22,7 +22,7 @@ typedef struct {
   typedef mutex_t usb3sun_mutex;
   #define USB3SUN_MUTEX __attribute__((section(".mutex_array")))
   #define usb3sun_dmb() __dmb()
-#elifdef USB3SUN_HAL_TEST
+#elifdef USB3SUN_HAL_LINUX_NATIVE
   struct usb3sun_mutex {};
   #define USB3SUN_MUTEX // empty
   #define usb3sun_dmb() do {} while (0)

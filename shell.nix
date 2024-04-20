@@ -47,8 +47,8 @@ in
     ncurses5 # libtinfo.so.5
     mpfr # libmpfr.so.6
 
-    # pio run -e native -t exec
-    # pio run -e native && stdbuf -o0 tr \\n \\r | .pio/build/native/program
+    # pio run -e linux -t exec
+    # pio run -e linux && stdbuf -o0 tr \\n \\r | .pio/build/linux/program
     gcc
   ]);
 

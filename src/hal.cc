@@ -455,7 +455,7 @@ void usb3sun_display_rect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t bo
   }
 }
 
-#elifdef USB3SUN_HAL_TEST
+#elifdef USB3SUN_HAL_LINUX_NATIVE
 
 #include <cerrno>
 #include <cstdarg>

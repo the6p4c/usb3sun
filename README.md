@@ -122,7 +122,7 @@ release notes
 * fixed some potential future compatibility issues in the settings formats (variable-width integer types and variable struct padding)
     * your existing settings in their v1 formats will be upgraded automatically
 * fixed a compile error when debug logging was enabled (**PICOPROBE_ENABLE**, now known as **DEBUG_OVER_UART**)
-* fixed all compile warnings under -Wall with the current toolchains for `pico` and `native` (via nix-shell)
+* fixed all compile warnings under -Wall with the current toolchains for `pico` and `linux` (via nix-shell)
 * fixed incorrect debug log output for **report id**, **usage**, and **usage page** when enumerating usb hid devices
 * fixed missing newline in debug log output when reporting ErrorRollOver inputs from usb keyboards
 * fixed missing newline in UHID_VERBOSE output when reporting inputs from non-boot-protocol usb devices

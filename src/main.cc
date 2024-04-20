@@ -521,7 +521,7 @@ out:
     Sprintf("error: usb [%u:%u]: failed to request to receive report\n", dev_addr, instance);
 }
 
-#ifdef USB3SUN_HAL_TEST
+#ifdef USB3SUN_HAL_LINUX_NATIVE
 
 #include <cstring>
 #include <iostream>
