@@ -6,13 +6,6 @@
 #include "settings.h"
 #include "state.h"
 
-void Buzzer::pwmTone(unsigned int pitch, std::optional<unsigned long> duration) {
-  usb3sun_buzzer_start(pitch);
-  if (duration.has_value()) {
-    usb3sun_alarm(*duration, []() { buzzer.update(); });
-  }
-}
-
 void Buzzer::update0() {
   const auto t = usb3sun_micros();
 
@@ -37,7 +30,7 @@ void Buzzer::update0() {
         return;
       } else {
         setCurrent(t, Buzzer::_::PLUG2);
-        pwmTone(plugPitch2, plugDuration);
+        usb3sun_buzzer_start(plugPitch2);
         return;
       }
       break;
@@ -51,7 +44,7 @@ void Buzzer::update0() {
         return;
       } else {
         setCurrent(t, Buzzer::_::UNPLUG2);
-        pwmTone(plugPitch, plugDuration);
+        usb3sun_buzzer_start(plugPitch);
         return;
       }
       break;
@@ -63,7 +56,7 @@ void Buzzer::update0() {
   }
   if (state.bell) {
     setCurrent(t, Buzzer::_::BELL);
-    pwmTone(bellPitch);
+    usb3sun_buzzer_start(bellPitch);
   } else if (current != Buzzer::_::NONE) {
     setCurrent(t, Buzzer::_::NONE);
     usb3sun_gpio_write(BUZZER_PIN, false);
@@ -110,7 +103,7 @@ void Buzzer::click(std::optional<unsigned long> temporaryDuration) {
     this->temporaryClickDuration = temporaryDuration;
     // violation of sparc keyboard spec :) but distinguishable from bell!
     setCurrent(usb3sun_micros(), Buzzer::_::CLICK);
-    pwmTone(1'000u, clickDuration());
+    usb3sun_buzzer_start(1'000);
   }
 }
 
@@ -118,7 +111,7 @@ void Buzzer::plug() {
   MutexGuard m{&buzzerMutex};
   if (current <= Buzzer::_::PLUG2) {
     setCurrent(usb3sun_micros(), Buzzer::_::PLUG);
-    pwmTone(plugPitch, plugDuration);
+    usb3sun_buzzer_start(plugPitch);
   }
 }
 
@@ -126,6 +119,6 @@ void Buzzer::unplug() {
   MutexGuard m{&buzzerMutex};
   if (current <= Buzzer::_::UNPLUG2) {
     setCurrent(usb3sun_micros(), Buzzer::_::UNPLUG);
-    pwmTone(plugPitch2, plugDuration);
+    usb3sun_buzzer_start(plugPitch2);
   }
 }
