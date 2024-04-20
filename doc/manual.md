@@ -19,10 +19,15 @@ usb3sun is an adapter that allows you to use usb keyboards and mice with SPARCst
 - [updating the firmware](#updating-the-firmware)
     - [usb method](#usb-method)
     - [picoprobe method](#picoprobe-method)
+- [debugging and automation](#debugging-and-automation)
+    - [debug logging over usb cdc](#debug-logging-over-usb-cdc)
+    - [debug logging with the debug uart](#debug-logging-with-the-debug-uart)
+    - [automation with the debug cli](#automation-with-the-debug-cli)
 - [compatibility](#compatibility)
-- [design files](#design-files)
 - [specifications](#specifications)
     - [electrical characteristics](#electrical-characteristics)
+    - [design files](#design-files)
+- [errata](#errata)
 
 ## getting started
 
@@ -242,14 +247,6 @@ usb3sun is not yet compatible with
 - [#6](https://github.com/delan/usb3sun/issues/6) — 3367:1903 Endgame Gear XM1r **mouse** — buttons only (16-bit dx/dy, no boot protocol)
 - [#7](https://github.com/delan/usb3sun/issues/7) — 045E:0039 Microsoft Intelli**Mouse** Optical 1.1A — broken (“Control FAILED”)
 
-## design files
-
-|  | rev A0 | rev A1 | rev A2 | rev A3 |
-|-|-|-|-|-|
-| schematic | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_sch)) |
-| pcb layout | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_pcb)) |
-| display module support |  | [source](https://github.com/delan/usb3sun/blob/74b367a12600d712eb7a05a9fc67c958bae3fe62/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A2/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A3/hardware/support/support.FCStd) |
-
 ## specifications
 
 |  | rev A0 | rev A1 | rev A2 | rev A3 |
@@ -275,6 +272,14 @@ usb3sun is not yet compatible with
 | VSUN | -0V3 to 6V0 |
 | I<sub>VBUS1</sub> | up to 500mA |
 | I<sub>VBUS2</sub> | up to 500mA |
+
+### design files
+
+|  | rev A0 | rev A1 | rev A2 | rev A3 |
+|-|-|-|-|-|
+| schematic | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_sch)) |
+| pcb layout | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_pcb)) |
+| display module support |  | [source](https://github.com/delan/usb3sun/blob/74b367a12600d712eb7a05a9fc67c958bae3fe62/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A2/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A3/hardware/support/support.FCStd) |
 
 ## errata
 
