@@ -79,9 +79,9 @@ typedef struct {
     static inline bool operator==(const _name &p, const _name &q) { return _eq; } \
     static inline bool operator!=(const _name &p, const _name &q) { return !(p == q); }; \
     static inline std::ostream &operator<<(std::ostream &s, const _name &o) { return s << _display; };
-    DERIVE_OP(PinoutV2Op, true, "pinout_v2");
-    DERIVE_OP(SunkInitOp, true, "sunk_init");
-    DERIVE_OP(SunkReadOp, true, "sunk_read");
+    DERIVE_OP(PinoutV2Op, ((void) p, (void) q, true), ((void) o, "pinout_v2"));
+    DERIVE_OP(SunkInitOp, ((void) p, (void) q, true), ((void) o, "sunk_init"));
+    DERIVE_OP(SunkReadOp, ((void) p, (void) q, true), ((void) o, "sunk_read"));
     DERIVE_OP(SunkWriteOp, p.data == q.data, "sunk_write " << o.data);
     DERIVE_OP(SunmInitOp, p.baud == q.baud, "sunm_init " << o.baud);
     DERIVE_OP(SunmWriteOp, p.data == q.data, "sunm_write " << o.data);
@@ -91,7 +91,7 @@ typedef struct {
     DERIVE_OP(BuzzerStartOp, p.pitch == q.pitch, "buzzer_start " << o.pitch);
     DERIVE_OP(FsReadOp, p.path == q.path && p.expected_len == q.expected_len && p.data == q.data, "fs_read " << o.path << " " << o.expected_len << " " << o.data);
     DERIVE_OP(FsWriteOp, p.path == q.path && p.data == q.data, "fs_write " << o.path << " " << o.data);
-    DERIVE_OP(RebootOp, true, "reboot");
+    DERIVE_OP(RebootOp, ((void) p, (void) q, true), ((void) o, "reboot"));
     DERIVE_OP(AlarmOp, p.ms == q.ms, "alarm " << o.ms);
     void usb3sun_test_init(uint64_t history_filter_mask);
     void usb3sun_mock_gpio_read(usb3sun_pin pin, bool value);

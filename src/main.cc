@@ -409,15 +409,13 @@ void tuh_hid_set_protocol_complete_cb(uint8_t dev_addr, uint8_t instance, uint8_
 // Invoked when received report from device via interrupt endpoint
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *report, uint16_t len) {
   uint8_t if_protocol = usb3sun_uhid_interface_protocol(dev_addr, instance);
-#ifndef UHID_VERBOSE
-  Sprint(".");
-#endif
 #ifdef UHID_VERBOSE
   Sprintf("usb [%u:%u]: hid report if_protocol=%u", dev_addr, instance, if_protocol);
-#endif
-#ifdef UHID_VERBOSE
   for (uint16_t i = 0; i < len; i++)
     Sprintf(" %02Xh", report[i]);
+#else
+  Sprint(".");
+  (void) len;
 #endif
 
   switch (if_protocol) {
@@ -780,19 +778,19 @@ static bool run_test(const char *test_name) {
     usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
       if (!strcmp(path, "/clickDuration.v2")) {
-        memcpy(data, "\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 8);
+        memcpy(data, "\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = std::min(data_len, (size_t)8));
         return true;
       }
       if (!strcmp(path, "/forceClick.v2")) {
-        memcpy(data, "\x02\x00\x00\x00", actual_len = 4);
+        memcpy(data, "\x02\x00\x00\x00", actual_len = std::min(data_len, (size_t)4));
         return true;
       }
       if (!strcmp(path, "/mouseBaud.v2")) {
-        memcpy(data, "\x02\x00\x00\x00", actual_len = 4);
+        memcpy(data, "\x02\x00\x00\x00", actual_len = std::min(data_len, (size_t)4));
         return true;
       }
       if (!strcmp(path, "/hostid.v2")) {
-        memcpy(data, "\x31\x32\x33\x34\x35\x36", actual_len = 6);
+        memcpy(data, "\x31\x32\x33\x34\x35\x36", actual_len = std::min(data_len, (size_t)6));
         return true;
       }
       return false;
@@ -813,6 +811,10 @@ static bool run_test(const char *test_name) {
   if (!strcmp(test_name, "settings_read_not_found")) {
     usb3sun_test_init(FsReadOp::id | FsWriteOp::id);
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
+      (void) path;
+      (void) data;
+      (void) data_len;
+      (void) actual_len;
       return false;
     });
     setup();
@@ -837,22 +839,22 @@ static bool run_test(const char *test_name) {
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
       if (!strcmp(path, "/clickDuration")) {
         //            [      version ][      padding ][                unsigned long ]
-        memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
+        memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = std::min(data_len, (size_t)16));
         return true;
       }
       if (!strcmp(path, "/forceClick")) {
         //            [      version ][ enum:int32_t ]
-        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = std::min(data_len, (size_t)8));
         return true;
       }
       if (!strcmp(path, "/mouseBaud")) {
         //            [      version ][ enum:int32_t ]
-        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00\x00", actual_len = std::min(data_len, (size_t)8));
         return true;
       }
       if (!strcmp(path, "/hostid")) {
         //            [      version ][           uint8_t[6] ][  pad ]
-        memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = 12);
+        memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = std::min(data_len, (size_t)12));
         return true;
       }
       return false;
@@ -883,22 +885,22 @@ static bool run_test(const char *test_name) {
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
       if (!strcmp(path, "/clickDuration")) {
         //            [      version ][      padding ][                     uint64_t ]
-        memcpy(data, "\x00\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = 16);
+        memcpy(data, "\x00\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55\x55", actual_len = std::min(data_len, (size_t)16));
         return true;
       }
       if (!strcmp(path, "/forceClick")) {
         //            [      version ][ enum:int32_t ]
-        memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = std::min(data_len, (size_t)8));
         return true;
       }
       if (!strcmp(path, "/mouseBaud")) {
         //            [      version ][ enum:int32_t ]
-        memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = 8);
+        memcpy(data, "\x00\x00\x00\x00\x02\x00\x00\x00", actual_len = std::min(data_len, (size_t)8));
         return true;
       }
       if (!strcmp(path, "/hostid")) {
         //            [      version ][           uint8_t[6] ][  pad ]
-        memcpy(data, "\x00\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = 12);
+        memcpy(data, "\x00\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA\xAA", actual_len = std::min(data_len, (size_t)12));
         return true;
       }
       return false;
@@ -925,22 +927,22 @@ static bool run_test(const char *test_name) {
     usb3sun_mock_fs_read([](const char *path, char *data, size_t data_len, size_t &actual_len) {
       if (!strcmp(path, "/clickDuration")) {
         //            [      version ][      padding ][ ???????????????? 7 bytes ]
-        memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55", actual_len = 15);
+        memcpy(data, "\x01\x00\x00\x00\xAA\xAA\xAA\xAA\x55\x55\x55\x55\x55\x55\x55", actual_len = std::min(data_len, (size_t)15));
         return true;
       }
       if (!strcmp(path, "/forceClick")) {
         //            [      version ][ ???? 3 bytes ]
-        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00", actual_len = 7);
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00", actual_len = std::min(data_len, (size_t)7));
         return true;
       }
       if (!strcmp(path, "/mouseBaud")) {
         //            [      version ][ ???? 3 bytes ]
-        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00", actual_len = 7);
+        memcpy(data, "\x01\x00\x00\x00\x02\x00\x00", actual_len = std::min(data_len, (size_t)7));
         return true;
       }
       if (!strcmp(path, "/hostid")) {
         //            [      version ][           uint8_t[6] ][??]
-        memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA", actual_len = 11);
+        memcpy(data, "\x01\x00\x00\x00\x31\x32\x33\x34\x35\x36\xAA", actual_len = std::min(data_len, (size_t)11));
         return true;
       }
       return false;

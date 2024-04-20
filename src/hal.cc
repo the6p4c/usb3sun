@@ -657,6 +657,7 @@ void usb3sun_usb_init(void) {}
 void usb3sun_usb_task(void) {}
 
 bool usb3sun_usb_vid_pid(uint8_t dev_addr, uint16_t *vid, uint16_t *pid) {
+  (void) dev_addr;
   *vid = mock_uhid_vid;
   *pid = mock_uhid_pid;
   return mock_uhid_vid_pid_result;
@@ -668,10 +669,14 @@ bool usb3sun_uhid_request_report(uint8_t dev_addr, uint8_t instance) {
 }
 
 uint8_t usb3sun_uhid_interface_protocol(uint8_t dev_addr, uint8_t instance) {
+  (void) dev_addr;
+  (void) instance;
   return mock_if_protocol;
 }
 
 size_t usb3sun_uhid_parse_report_descriptor(usb3sun_hid_report_info *result, size_t result_len, const uint8_t *descriptor, size_t descriptor_len) {
+  (void) descriptor;
+  (void) descriptor_len;
   for (size_t i = 0; i < result_len && i < mock_uhid_report_infos.size(); i++) {
     result[i] = mock_uhid_report_infos[i];
   }
@@ -679,10 +684,18 @@ size_t usb3sun_uhid_parse_report_descriptor(usb3sun_hid_report_info *result, siz
 }
 
 bool usb3sun_uhid_set_led_report(uint8_t dev_addr, uint8_t instance, uint8_t report_id, uint8_t &led_report) {
+  // TODO: stub
+  (void) dev_addr;
+  (void) instance;
+  (void) report_id;
+  (void) led_report;
   return false;
 }
 
-void usb3sun_debug_init(int (*printf)(const char *format, ...)) {}
+void usb3sun_debug_init(int (*printf)(const char *format, ...)) {
+  // TODO: stub
+  (void) printf;
+}
 
 int usb3sun_debug_uart_read(void) {
   if (fcntl(0, F_SETFL, O_NONBLOCK) == 0) {
@@ -742,15 +755,25 @@ bool usb3sun_fs_write(const char *path, const char *data, size_t len) {
   return false;
 }
 
-void usb3sun_mutex_lock(usb3sun_mutex *mutex) {}
+void usb3sun_mutex_lock(usb3sun_mutex *mutex) {
+  // TODO: stub
+  (void) mutex;
+}
 
-void usb3sun_mutex_unlock(usb3sun_mutex *mutex) {}
+void usb3sun_mutex_unlock(usb3sun_mutex *mutex) {
+  // TODO: stub
+  (void) mutex;
+}
 
 bool usb3sun_fifo_push(uint32_t value) {
+  // TODO: stub
+  (void) value;
   return false;
 }
 
 bool usb3sun_fifo_pop(uint32_t *result) {
+  // TODO: stub
+  (void) result;
   return false;
 }
 
@@ -798,6 +821,7 @@ void usb3sun_panic(const char *format, ...) {
 }
 
 void usb3sun_alarm(uint32_t ms, void (*callback)(void)) {
+  (void) callback;
   push_history(AlarmOp {ms});
 }
 
@@ -811,15 +835,31 @@ void usb3sun_gpio_write(usb3sun_pin pin, bool value) {
   push_history(GpioWriteOp {pin, value});
 }
 
-void usb3sun_gpio_set_as_inverted(usb3sun_pin pin) {}
+void usb3sun_gpio_set_as_inverted(usb3sun_pin pin) {
+  // TODO: stub
+  (void) pin;
+}
 
-void usb3sun_gpio_set_as_output(usb3sun_pin pin) {}
+void usb3sun_gpio_set_as_output(usb3sun_pin pin) {
+  // TODO: stub
+  (void) pin;
+}
 
-void usb3sun_gpio_set_as_input_pullup(usb3sun_pin pin) {}
+void usb3sun_gpio_set_as_input_pullup(usb3sun_pin pin) {
+  // TODO: stub
+  (void) pin;
+}
 
-void usb3sun_gpio_set_as_input_pulldown(usb3sun_pin pin) {}
+void usb3sun_gpio_set_as_input_pulldown(usb3sun_pin pin) {
+  // TODO: stub
+  (void) pin;
+}
 
-void usb3sun_i2c_set_pinout(usb3sun_pin scl, usb3sun_pin sda) {}
+void usb3sun_i2c_set_pinout(usb3sun_pin scl, usb3sun_pin sda) {
+  // TODO: stub
+  (void) scl;
+  (void) sda;
+}
 
 void usb3sun_buzzer_start(uint32_t pitch) {
   push_history(BuzzerStartOp {pitch});
@@ -902,6 +942,7 @@ void usb3sun_display_rect(
     int16_t x0_, int16_t y0_, int16_t w_, int16_t h_,
     int16_t border_radius, bool inverted, bool filled) {
   // TODO border radius
+  (void) border_radius;
   if (w_ <= 0 || h_ <= 0) return; // avoid underflow
   auto x0 = static_cast<size_t>(x0_), y0 = static_cast<size_t>(y0_);
   auto w = static_cast<size_t>(w_), h = static_cast<size_t>(h_);
