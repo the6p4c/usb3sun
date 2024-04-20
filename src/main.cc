@@ -532,9 +532,8 @@ out:
 #include <sys/wait.h>
 
 #define TEST_REQUIRES(expr) do { fprintf(stderr, ">>> skipping test (%s)\n", #expr); return true; } while (0)
-#define TEST_ASSERT_EQ(actual, expected) do { if (actual != expected) { std::cerr << "\nassertion failed: " #actual "\n    actual: " << actual << "\n    expected: " << expected << "\n"; return false; } } while (0)
-
-static bool assert_then_clear_test_history(const std::vector<Op> &expected) {
+#define TEST_ASSERT_EQ(actual, expected) do { if (actual != expected) { std::cerr << "\n" __FILE__ ":" << __LINE__ << ": assertion failed: " #actual "\n    actual: " << actual << "\n    expected: " << expected << "\n"; return false; } } while (0)
+static bool assert_then_clear_test_history(const char *file, size_t line, const std::vector<Op> &expected) {
   const std::vector<Entry> &actual = usb3sun_test_get_history();
   std::optional<size_t> first_difference{};
   for (size_t i = 0; i < actual.size() || i < expected.size(); i++) {
@@ -544,7 +543,7 @@ static bool assert_then_clear_test_history(const std::vector<Op> &expected) {
     }
   }
   if (first_difference.has_value()) {
-    std::cerr << "\nassertion failed: bad test history!\n";
+    std::cerr << "\n" << file << ":" << line << ": assertion failed: bad test history!\n";
     for (size_t i = 0; i < *first_difference; i++) {
       std::cerr << "    " << actual[i] << "\n";
     }
@@ -562,6 +561,7 @@ static bool assert_then_clear_test_history(const std::vector<Op> &expected) {
   usb3sun_test_clear_history();
   return !first_difference.has_value();
 }
+#define assert_then_clear_test_history(...) assert_then_clear_test_history(__FILE__, __LINE__, __VA_ARGS__)
 
 static std::vector<const char *> test_names = {
   "setup_pinout_v1",
