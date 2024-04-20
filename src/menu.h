@@ -27,6 +27,7 @@ struct MenuView : View {
   void handleKey(const UsbkChanges &) override;
   void open();
   void close();
+  void closeWithoutConfirmSave();
   void sel(uint8_t usbkSelector);
 };
 

@@ -120,6 +120,16 @@ void MenuView::open() {
 void MenuView::close() {
   if (!isOpen)
     return;
+  if (newSettings != settings) {
+    SAVE_SETTINGS_VIEW.open("");
+  } else {
+    closeWithoutConfirmSave();
+  }
+}
+
+void MenuView::closeWithoutConfirmSave() {
+  if (!isOpen)
+    return;
   View::pop();
   isOpen = false;
 }
@@ -142,11 +152,7 @@ void MenuView::handleKey(const UsbkChanges &changes) {
 void MenuView::sel(uint8_t usbkSelector) {
   switch (usbkSelector) {
     case USBK_ESCAPE:
-      if (newSettings != settings) {
-        SAVE_SETTINGS_VIEW.open("");
-      } else {
-        close();
-      }
+      close();
       break;
     case USBK_RIGHT:
       switch (selectedItem) {
@@ -184,11 +190,7 @@ void MenuView::sel(uint8_t usbkSelector) {
     case USBK_ENTER:
       switch (selectedItem) {
         case (size_t)MenuItem::GoBack:
-          if (newSettings != settings) {
-            SAVE_SETTINGS_VIEW.open("");
-          } else {
-            close();
-          }
+          close();
           break;
         case (size_t)MenuItem::Hostid:
           HOSTID_VIEW.open(&newSettings.hostid);
@@ -197,12 +199,12 @@ void MenuView::sel(uint8_t usbkSelector) {
           WAIT_VIEW.open("Reprogramming...");
 
           unsigned hostid24 =
-            decodeHex(settings.hostid[0]) << 20
-            | decodeHex(settings.hostid[1]) << 16
-            | decodeHex(settings.hostid[2]) << 12
-            | decodeHex(settings.hostid[3]) << 8
-            | decodeHex(settings.hostid[4]) << 4
-            | decodeHex(settings.hostid[5]);
+            decodeHex(newSettings.hostid[0]) << 20
+            | decodeHex(newSettings.hostid[1]) << 16
+            | decodeHex(newSettings.hostid[2]) << 12
+            | decodeHex(newSettings.hostid[3]) << 8
+            | decodeHex(newSettings.hostid[4]) << 4
+            | decodeHex(newSettings.hostid[5]);
 
           unsigned i = 0;
           // https://funny.computer.daz.cat/sun/nvram-hostid-faq.txt
@@ -340,11 +342,11 @@ void SaveSettingsView::handleKey(const UsbkChanges &changes) {
             pinout.restartSunm();
           }
           close();
-          MENU_VIEW.close();
+          MENU_VIEW.closeWithoutConfirmSave();
         } break;
         case USBK_N:
           close();
-          MENU_VIEW.close();
+          MENU_VIEW.closeWithoutConfirmSave();
           break;
         case USBK_ESCAPE:
           close();
