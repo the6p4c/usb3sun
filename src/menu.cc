@@ -322,7 +322,8 @@ void SaveSettingsView::handlePaint() {
   usb3sun_display_hline(4, 8 + 6, 6 * 20 - 1, false, 4);
   usb3sun_display_hline(4, 16 + 6, 6 * 20 - 1, false, 4);
   usb3sun_display_hline(4, 24 + 6, 6 * 20 - 1, false, 4);
-  usb3sun_display_text(4, 8, false, "ENTER\377\377save settings", true);
+  usb3sun_display_text(4, 0, false, "   Save settings?   ", true);
+  usb3sun_display_text(4, 8, false, "ENTER\377\377\377save changes", true);
   usb3sun_display_text(4, 16, false, "N\377\377\377\377\377\377\377\377\377don't save", true);
   usb3sun_display_text(4, 24, false, "ESC\377\377\377\377\377\377\377\377\377\377go back", true);
 }
