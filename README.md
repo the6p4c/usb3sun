@@ -79,6 +79,10 @@ features planned for a future firmware version:
 release notes
 -------------
 
+### firmware ?.? (????-??-??)
+
+* added experimental support for **leds on your usb keyboard** — led updates are not yet reliable, and currently has bugs that can cause usb devices to stop responding
+
 ### pcb rev B0 (????-??-??)
 
 * this board **requires firmware 2.0** or newer
@@ -92,27 +96,31 @@ release notes
 ### firmware 2.0 (????-??-??)
 
 * added support for adapters with **pcb rev B0** — these use pinout v2, while older revs use pinout v1
-* [#8](https://github.com/delan/usb3sun/issues/8) — added support for **NeXTSTEP** and **Plan 9**, which require the mouse to run at a lower baud rate
-    * added a **mouse baud setting** that can be set to 9600 baud (default), 4800, 2400, or 1200 baud
-* added experimental support for **leds on your usb keyboard** — led updates are not yet reliable, and currently has bugs that can cause usb devices to stop responding
-* [#14](https://github.com/delan/usb3sun/issues/14) — **settings are now saved when you close the menu**, with a confirmation screen
-    * this change was made as part of a workaround for usb devices that malfunction when saving settings; if you have any affected devices, hold **Shift** while pressing **Enter** to reboot the adapter after saving settings
-* you can now **close the menu by pressing Esc**
-* the menu now **automatically closes** after **Reprogram idprom** and **Wipe idprom (AAh)**
-* the menu now **shows four menu items**, rather than three menu items and the version number
-* **updated our usb host stack**: Adafruit TinyUSB Library (2.0.1 → 3.1.0), Pico PIO USB (0.5.2 → 0.5.3)
+* added a **mouse baud setting** that can be set to 9600 baud (default), 4800, 2400, or 1200 baud
+    * this adds support for **NeXTSTEP** and **Plan 9**, which require the mouse to run at a lower baud rate ([#8](https://github.com/delan/usb3sun/issues/8))
+* you can now choose whether to **save or discard settings changes** when you close the menu
+    * this change was made as part of a workaround for usb devices that malfunction when saving settings ([#14](https://github.com/delan/usb3sun/issues/14)); if you have any affected devices, hold **Shift** while pressing **Enter** to reboot the adapter after saving settings
+* the displayed **version number** can now include **uncommitted and/or unreleased changes** (`2.0+` / `2.0+1` / `2.0+1+`)
+* several other improvements to the user interface
+    * you can now **close the menu by pressing Esc**
+    * the menu now **automatically closes** after *Reprogram idprom* and *Wipe idprom (AAh)*
+    * the menu now **shows four menu items**, rather than three menu items and the version number
+    * *Click duration* now **beeps to preview your changes**, regardless of whether clicks are enabled
+    * *Reprogram idprom* now **tells you what hostid is being programmed** into your idprom
+* **updated our usb host stack**, making usb devices enumerate faster
+    * Adafruit TinyUSB Library (2.0.1 → 3.1.0), Pico PIO USB (0.5.2 → 0.5.3)
     * this may affect [compatibility](https://github.com/delan/usb3sun/blob/default/doc/manual.md#compatibility) with your usb devices; please [report any regressions or improvements](https://github.com/delan/usb3sun/issues?q=is%3Aissue+is%3Aopen+label%3Acompatibility)
-* [#10](https://github.com/delan/usb3sun/issues/10) — added support for logging over UART_TX/UART_RX **without disabling the sun keyboard interface**
+* added support for logging over UART_TX/UART_RX **without disabling the sun keyboard interface** ([#10](https://github.com/delan/usb3sun/issues/10))
     * this feature requires **pcb rev B0** or newer, due to the pinout changes required
     * please report any regressions with the **buzzer** or **sun mouse interface**; the buzzer had to be moved from pio to hardware pwm, and the sun mouse had to be moved from hardware uart to pio
 * added a **debug cli** over UART_RX — this lets you press keys and move the mouse without a usb keyboard or mouse
 * the firmware can now be **built as a normal program for linux**, thanks to a new hardware abstraction layer; as a result:
     * added an **interactive demo** (`run-demo.sh`) that can be used to play with or develop the user interface
-    * added a **test suite** (`run-tests.sh`) for the setup and pinout routines, sun keyboard interface (reset sequence), buzzer (click and bell), settings (reads, writes, upgrades), and menu (save settings confirmation)
+    * added a **test suite** (`run-tests.sh`) for the setup and pinout routines, sun keyboard interface (reset sequence), buzzer (click and bell), settings (reads, writes, upgrades), and menu (confirm-save, hostid, i/o)
     * we can **catch some memory access violations** with dynamic analysis by **AddressSanitizer** (asan)
 * added some **build tests** (`run-build-tests.sh`) to catch compile errors with custom build flags
 * fixed some potential future compatibility issues in the settings formats (variable-width integer types and variable struct padding)
-    * your existing settings in the v1 format will be upgraded automatically
+    * your existing settings in their v1 formats will be upgraded automatically
 * fixed a compile error when debug logging was enabled (**PICOPROBE_ENABLE**, now known as **DEBUG_OVER_UART**)
 * fixed all compile warnings under -Wall with the current toolchains for `pico` and `native` (via nix-shell)
 * fixed incorrect debug log output for **report id**, **usage**, and **usage page** when enumerating usb hid devices
