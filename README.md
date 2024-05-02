@@ -93,7 +93,7 @@ release notes
 * replaced transistors Q1 through Q4 (2N7000) with dual transistors Q1 and Q3 (2N7002DW)
 * removed solder jumpers JP1 and JP2, which were added in rev A2 in case of errata
 
-### firmware 2.0 (????-??-??)
+### firmware 2.0 (2024-05-02)
 
 * added support for adapters with **pcb rev B0** — these use pinout v2, while older revs use pinout v1
 * added a **mouse baud setting** that can be set to 9600 baud (default), 4800, 2400, or 1200 baud
@@ -128,23 +128,20 @@ release notes
 * fixed missing newline in UHID_VERBOSE output when reporting inputs from non-boot-protocol usb devices
 * removed the splash screen from debug logging — this significantly slowed down the setup routine
 * removed the fake sun emulation feature — this wasn’t too useful, and was broken by the pinout changes
-
-<details><summary>several changes to config.h</summary>
-
-* added **DEBUG_OVER_CDC** to disable logging over usb cdc
-* added **UHID_LED_ENABLE** to opt into experimental usb hid led support
-* added **UHID_LED_TEST** to blink leds on all usb keyboards
-* added pin definitions **PINOUT_V2_PIN**, **KTX_ENABLE**, **DISPLAY_ENABLE**, **DEBUG_UART**, **SUNK_UART_V1**, **SUNK_UART_V2**, and **SUNM_UART_V1**
-* removed **SUNM_BAUD** in favour of the new menu setting
-* renamed **PICOPROBE_ENABLE** to **DEBUG_OVER_UART**
-* renamed **PICOPROBE_BAUD** to **DEBUG_UART_BAUD**
-* renamed **PICOPROBE_TX** to **DEBUG_UART_TX**
-* renamed **PICOPROBE_RX** to **DEBUG_UART_RX**
-* **SUN_KTX**, **SUN_KRX**, **SUN_MTX**, and **SUN_MRX** were split into pinout v1 and v2 variants
-* **DEBUG_OVER_UART** no longer disables logging over usb cdc (see **DEBUG_OVER_CDC**)
-* **SUNK_ENABLE** is now configurable, and takes precedence over **DEBUG_OVER_UART** in pinout v1
-* **SUNM_ENABLE** is now configurable
-</details>
+* several changes to config.h
+    * added **DEBUG_OVER_CDC** to disable logging over usb cdc
+    * added **UHID_LED_ENABLE** to opt into experimental usb hid led support
+    * added **UHID_LED_TEST** to blink leds on all usb keyboards
+    * added pin definitions **PINOUT_V2_PIN**, **KTX_ENABLE**, **DISPLAY_ENABLE**, **DEBUG_UART**, **SUNK_UART_V1**, **SUNK_UART_V2**, and **SUNM_UART_V1**
+    * removed **SUNM_BAUD** in favour of the new menu setting
+    * renamed **PICOPROBE_ENABLE** to **DEBUG_OVER_UART**
+    * renamed **PICOPROBE_BAUD** to **DEBUG_UART_BAUD**
+    * renamed **PICOPROBE_TX** to **DEBUG_UART_TX**
+    * renamed **PICOPROBE_RX** to **DEBUG_UART_RX**
+    * **SUN_KTX**, **SUN_KRX**, **SUN_MTX**, and **SUN_MRX** were split into pinout v1 and v2 variants
+    * **DEBUG_OVER_UART** no longer disables logging over usb cdc (see **DEBUG_OVER_CDC**)
+    * **SUNK_ENABLE** was moved to platformio.ini, and takes precedence over **DEBUG_OVER_UART** in pinout v1
+    * **SUNM_ENABLE** was moved to platformio.ini
 
 ### pcb rev [A3](https://github.com/delan/usb3sun/releases/tag/A3) (2023-10-15)
 
