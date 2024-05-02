@@ -41,6 +41,7 @@ in
     # for running openocd via pio cli or vscode extension
     libusb1 # libusb-1.0.so.0
     hidapi # libhidapi-hidraw.so.0
+    systemd # libudev.so.1
 
     # for platformio debugging in vscode
     # (ldd ~/.platformio/packages/toolchain-rp2040-earlephilhower/bin/arm-none-eabi-gdb)
