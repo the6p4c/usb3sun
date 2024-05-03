@@ -95,6 +95,7 @@ release notes
 
 ### firmware 2.0 (2024-05-02)
 
+* [pio_pkg_list.txt](https://github.com/delan/usb3sun/blob/2.0/pio_pkg_list.txt) = dependency tree at time of release
 * added support for adapters with **pcb rev B0** — these use pinout v2, while older revs use pinout v1
 * added a **mouse baud setting** that can be set to 9600 baud (default), 4800, 2400, or 1200 baud
     * this adds support for **NeXTSTEP** and **Plan 9**, which require the mouse to run at a lower baud rate ([#8](https://github.com/delan/usb3sun/issues/8))
