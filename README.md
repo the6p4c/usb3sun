@@ -10,7 +10,7 @@ usb3sun is an adapter that allows you to connect USB keyboards and mice to the S
     * [the development of rev A2](https://cohost.org/delan/post/2042852-usb3sun-rev-a2-now)
     * [the development of rev A3](https://cohost.org/delan/post/2973101-usb3sun-rev-a3-guar)
     * [the development of firmware 2.0](https://cohost.org/delan/post/5806830-usb3sun-2-0-faster)
-    * [the development of rev B0](https://cohost.org/delan/post/6029886-usb3sun-rev-b0-more)
+    * [the development of rev B0](https://cohost.org/delan/post/6029886-usb3sun-rev-b0-a-us)
     * [the funny computer museum](https://funny.computer.daz.cat/)
 
 see also:
