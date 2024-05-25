@@ -9,6 +9,8 @@ usb3sun is an adapter that allows you to connect USB keyboards and mice to the S
     * [the development of rev A1](https://cohost.org/delan/post/1650431-usb3sun-rev-a1-a-us)
     * [the development of rev A2](https://cohost.org/delan/post/2042852-usb3sun-rev-a2-now)
     * [the development of rev A3](https://cohost.org/delan/post/2973101-usb3sun-rev-a3-guar)
+    * [the development of firmware 2.0](https://cohost.org/delan/post/5806830-usb3sun-2-0-faster)
+    * [the development of rev B0](https://cohost.org/delan/post/6029886-usb3sun-rev-b0-more)
     * [the funny computer museum](https://funny.computer.daz.cat/)
 
 see also:
@@ -33,12 +35,18 @@ documentation
 * maintainer docs
     * [how to release](doc/releasing.md)
 
-new in rev A2 and firmware 1.5
-------------------------------
+what’s new
+----------
 
-usb3sun now has a usb-c port for **easy firmware updates!**
+**rev B0** allows for debug logging (and the new debug cli) **without disabling the sun keyboard interface**, and fixes some [minor bugs](https://github.com/delan/usb3sun/blob/B0/doc/manual.md#errata) that happen when resetting the adapter.
 
-usb3sun can now [**reprogram your idprom**](https://funny.computer.daz.cat/sun/nvram-hostid-faq.txt) with just a few keystrokes, making it easier to boot your workstation with a dead nvram battery!
+new in **firmware 2.0**:
+
+- support for **NeXTSTEP** and **Plan 9**, which require the mouse to run at 1200 baud
+- configurable **mouse baud rate** — 9600 (default), 4800, 2400, or 1200 baud
+- **debug cli** over UART_RX, allowing you to automate keyboard and mouse inputs
+
+as of **firmware 1.5**, usb3sun can now [**reprogram your idprom**](https://funny.computer.daz.cat/sun/nvram-hostid-faq.txt) with just a few keystrokes, making it easier to boot your workstation with a dead nvram battery!
 
 hardware features
 -----------------
@@ -69,6 +77,7 @@ usb3sun has **persistent settings** for:
 
 * forcing click mode (no/off/on)
 * click duration (5–100 ms)
+* mouse baud rate (for NeXTSTEP and Plan 9)
 * your hostid
 
 features planned for a future firmware version:

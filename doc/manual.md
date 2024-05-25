@@ -27,6 +27,7 @@ usb3sun is an adapter that allows you to use usb keyboards and mice with SPARCst
 - [specifications](#specifications)
     - [electrical characteristics](#electrical-characteristics)
     - [design files](#design-files)
+- [troubleshooting](#troubleshooting)
 - [errata](#errata)
 
 ## getting started
@@ -140,7 +141,7 @@ you will need a [raspberry pi pico](https://www.altronics.com.au/p/z6421a-raspbe
 
 flash the debugger with [the picoprobe firmware](https://github.com/raspberrypi/picoprobe), then connect the adapter to the debugger as follows, being sure to connect GND first and disconnect GND last.
 
-| rev A0 | rev A1, A2, A3 | picoprobe |
+| rev A0 | rev A1+ | picoprobe |
 |-|-|-|
 | GND | GND | GND (pin 8) |
 |  | UART_TX | GP5 (pin 7) |
@@ -235,8 +236,8 @@ usb3sun has been tested successfully with
 - 17EF:608D Lenovo EMS-537A **mouse**
 - 17EF:6019 Lenovo MSU1175 **mouse**
 - 045E:0040 Microsoft Wheel **Mouse** Optical 1.1A — enumeration is unreliable
-- 045E:0752 Microsoft Wired **Keyboard** 400 — [with patch](firmware.md)
-- 045E:0750 Microsoft Wired **Keyboard** 600 — [with patch](firmware.md)
+- 045E:0752 Microsoft Wired **Keyboard** 400
+- 045E:0750 Microsoft Wired **Keyboard** 600
 - 045E:0773 Microsoft Explorer Touch **Mouse** (model 1490)
 - FEED:6061 Preonic OLKB-60 **keyboard** with QMK
 
@@ -249,7 +250,7 @@ usb3sun is not yet compatible with
 
 ## specifications
 
-|  | rev A0 | rev A1 | rev A2 | rev A3 |
+|  | rev A0 | rev A1 | rev A2 | rev A3+ |
 |-|-|-|-|-|
 | width | 36 mm | 36 mm | 36 mm | 36 mm |
 | length | 95 mm | **98 mm** | 98 mm | 98 mm |
@@ -264,7 +265,7 @@ usb3sun is not yet compatible with
 
 ### electrical characteristics
 
-|  | rev A0, A1, A2, A3 |
+|  | rev A0+ |
 |-|-|
 | operating temperature | -40°C to 85°C |
 | storage temperature | -40°C to 85°C |
@@ -275,16 +276,26 @@ usb3sun is not yet compatible with
 
 ### design files
 
-|  | rev A0 | rev A1 | rev A2 | rev A3 |
-|-|-|-|-|-|
-| schematic | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_sch)) |
-| pcb layout | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_pcb)) |
-| display module support |  | [source](https://github.com/delan/usb3sun/blob/74b367a12600d712eb7a05a9fc67c958bae3fe62/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A2/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A3/hardware/support/support.FCStd) |
+|  | rev A0 | rev A1 | rev A2 | rev A3 | rev B0 |
+|-|-|-|-|-|-|
+| schematic | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_sch)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FB0%2Fhardware%2Fpcb%2Fusb3sun.kicad_sch) ([source](https://github.com/delan/usb3sun/blob/B0/hardware/pcb/usb3sun.kicad_sch)) |
+| pcb layout | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA0%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A0/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA1%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A1/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA2%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A2/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FA3%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/A3/hardware/pcb/usb3sun.kicad_pcb)) | [rendered](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fdelan%2Fusb3sun%2Fblob%2FB0%2Fhardware%2Fpcb%2Fusb3sun.kicad_pcb) ([source](https://github.com/delan/usb3sun/blob/B0/hardware/pcb/usb3sun.kicad_pcb)) |
+| display module support |  | [source](https://github.com/delan/usb3sun/blob/74b367a12600d712eb7a05a9fc67c958bae3fe62/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A2/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/A3/hardware/support/support.FCStd) | [source](https://github.com/delan/usb3sun/blob/B0/hardware/support/support.FCStd) |
+
+## troubleshooting
+
+observed on solaris 2.5.1 — if you boot solaris immediately after reprogramming a previously invalid idprom, you may see the loading spinner hang after the following errors. if affected, press **Stop+A**, then rerun your `boot` command to reboot your workstation.
+
+```
+Invalid format code in IDprom.
+WARNING: TOD clock not initialized -- CHECK AND RESET THE DATE!
+|
+```
 
 ## errata
 
 [#2](https://github.com/delan/usb3sun/issues/2) (fixed in rev B0+) — in **rev A0**, **rev A1**, **rev A2**, and **rev A3**, resetting the adapter will make the workstation drop you into an ok prompt, because the initial state of the adapter after reset is a serial “break” on the sun keyboard tx line. this may cause the software on your workstation to behave unpredictably after typing “go” to continue. for example, solaris 2.5.1 often panics here if booted over nfs.
 
-[#11](https://github.com/delan/usb3sun/issues/11) (fixed in rev B0+) — in **rev A0**, **rev A1**, **rev A2**, and **rev A3**, resetting the adapter may cause the adapter to hang until power cycled, because the display module can’t be reset and may start to malfunction. this is relatively rare, but also fairly easy to reproduce if you mash the reset button several times in quick succession.
+[#11](https://github.com/delan/usb3sun/issues/11) (fixed in rev B0+) — in **rev A0**, **rev A1**, **rev A2**, and **rev A3**, resetting the adapter may cause the adapter to hang until power cycled, with the pico’s green indicator led stuck on, because the display module can’t be reset and may start to malfunction. this is relatively rare, but also fairly easy to reproduce if you mash the reset button several times in quick succession.
 
 [#14](https://github.com/delan/usb3sun/issues/14) (workaround available in firmware 2.0+) — in **all firmware versions**, some usb devices may start to malfunction after saving settings, because we need to pause the whole adapter (including the usb host) while we write to flash. for example, with the Microsoft Wheel Mouse Optical 1.1A (045E:0040), saving settings may make the red led go dim and make the mouse start spewing updates until disconnected. to work around this issue (firmware 2.0+), hold **Shift** while pressing **Enter** to reboot the adapter after saving settings.
