@@ -5,10 +5,17 @@ use defmt_rtt as _;
 use panic_probe as _;
 
 use defmt::info;
-use embedded_hal::digital::OutputPin;
+use embedded_graphics::pixelcolor::BinaryColor;
+use embedded_graphics::prelude::*;
+use embedded_graphics::primitives::{PrimitiveStyle, Rectangle};
+use embedded_hal::digital::{OutputPin, PinState};
 use rp_pico::hal::clocks::init_clocks_and_plls;
+use rp_pico::hal::fugit::RateExtU32;
+use rp_pico::hal::gpio::{FunctionI2C, Pin};
 use rp_pico::hal::{Clock, Sio, Watchdog};
 use rp_pico::{entry, pac, Pins};
+use ssd1306::prelude::*;
+use ssd1306::{I2CDisplayInterface, Ssd1306};
 
 #[entry]
 fn main() -> ! {
@@ -27,25 +34,96 @@ fn main() -> ! {
         &mut pac.RESETS,
         &mut watchdog,
     )
-    .ok()
     .unwrap();
 
     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
+    /******
+     * io *
+     ******/
     let pins = Pins::new(
         pac.IO_BANK0,
         pac.PADS_BANK0,
         sio.gpio_bank0,
         &mut pac.RESETS,
     );
-    let mut led_pin = pins.led.into_push_pull_output();
 
+    let mut led_pin = pins.led.into_push_pull_output_in_state(PinState::Low);
+    let mut display_enable_pin = pins.gpio12.into_push_pull_output_in_state(PinState::Low);
+    let display_sda_pin: Pin<_, FunctionI2C, _> = pins.gpio16.reconfigure();
+    let display_scl_pin: Pin<_, FunctionI2C, _> = pins.gpio17.reconfigure();
+
+    /***********
+     * display *
+     ***********/
+    let display_i2c = rp_pico::hal::I2C::i2c0(
+        pac.I2C0,
+        display_sda_pin,
+        display_scl_pin,
+        400.kHz(),
+        &mut pac.RESETS,
+        &clocks.system_clock,
+    );
+    let mut display = Ssd1306::new(
+        I2CDisplayInterface::new(display_i2c),
+        DisplaySize128x64,
+        DisplayRotation::Rotate0,
+    )
+    .into_buffered_graphics_mode();
+
+    // see src/pinout.cc:74
+    delay.delay_ms(30);
+    display_enable_pin.set_high().unwrap();
+    delay.delay_ms(30);
+
+    display.init().unwrap();
+
+    /********
+     * main *
+     ********/
     loop {
         info!("on!");
         led_pin.set_high().unwrap();
+        Rectangle::new(Point::new(0, 0), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+            .draw(&mut display)
+            .unwrap();
+        Rectangle::new(Point::new(64, 0), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::Off))
+            .draw(&mut display)
+            .unwrap();
+        Rectangle::new(Point::new(64, 32), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+            .draw(&mut display)
+            .unwrap();
+        Rectangle::new(Point::new(0, 32), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::Off))
+            .draw(&mut display)
+            .unwrap();
+        display.flush().unwrap();
+
         delay.delay_ms(500);
+
         info!("off!");
         led_pin.set_low().unwrap();
+        Rectangle::new(Point::new(0, 0), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::Off))
+            .draw(&mut display)
+            .unwrap();
+        Rectangle::new(Point::new(64, 0), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+            .draw(&mut display)
+            .unwrap();
+        Rectangle::new(Point::new(64, 32), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::Off))
+            .draw(&mut display)
+            .unwrap();
+        Rectangle::new(Point::new(0, 32), Size::new(64, 32))
+            .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+            .draw(&mut display)
+            .unwrap();
+        display.flush().unwrap();
+
         delay.delay_ms(500);
     }
 }
